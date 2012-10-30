@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[脑波网]]></title>
-  <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
+  <title><![CDATA[Category: linux | 脑波网]]></title>
+  <link href="http://dexterdeng.github.com/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
   <updated>2012-10-30T17:01:54+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
@@ -96,37 +96,6 @@
 
 <pre><code># usermod -g www tony
 </code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[MySQL 'Incorrect key file for table' error]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/"/>
-    <updated>2012-10-30T02:47:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/10/30/mysql-incorrect-key-file-for-table-error</id>
-    <content type="html"><![CDATA[<p>When saving a record to a MySQL table the other day I got the error message &#8220;Incorrect key file for table &#8216;mytable&#8217;; try to repair it&#8221;. I am uncertain why the error occured and how to ensure it doesn&#8217;t happen again in the future but a quick fix for the time being is simple.</p>
-
-<h2>How to repair a MySQL table</h2>
-
-<p>All you need to do is to repair the table by running the following SQL command, where &#8220;mytable&#8221; is the name of the table that gave the error:</p>
-
-<pre><code>REPAIR TABLE `mytable`;
-</code></pre>
-
-<p>You can run this from e.g. the MySQL CLI or phpMyAdmin. From phpMyAdmin select the table, then &#8220;Operations&#8221; from the navigation tabs in the right frame above the table info; then &#8220;Repair Table&#8221; from the &#8220;Table maintenance&#8221; options at the bottom of the page.</p>
-
-<h2>When the table is /tmp/#sql_xxx_x.MYI</h2>
-
-<p>If the error looks like &#8220;Incorrect key file for table &#8216;/tmp/#sql_xxx_x.MYI&#8217;; try to repair it&#8221; where it refers to a temporary location on the filesystem, it&#8217;s likely you&#8217;ve run out of diskspace. Read my follow up post for more information.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[开博了，记录我的脑波]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/10/23/kai-bo-liao-%2Cji-lu-wo-de-nao-bo-.-./"/>
-    <updated>2012-10-23T16:21:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/10/23/kai-bo-liao-,ji-lu-wo-de-nao-bo-.-.</id>
-    <content type="html"><![CDATA[<p>开博了，记录我的脑波。。</p>
 ]]></content>
   </entry>
   
