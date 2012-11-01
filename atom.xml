@@ -4,7 +4,7 @@
   <title><![CDATA[脑波网]]></title>
   <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2012-11-01T13:34:17+08:00</updated>
+  <updated>2012-11-01T13:46:56+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[integrate_tire+elasticsearch_on_bad_server]]></title>
+    <title type="html"><![CDATA[Integrate tire elasticsearch on bad server]]></title>
     <link href="http://dexterdeng.github.com/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/"/>
     <updated>2012-11-01T13:24:00+08:00</updated>
     <id>http://dexterdeng.github.com/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server</id>
