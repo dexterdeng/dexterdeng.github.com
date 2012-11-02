@@ -4,7 +4,7 @@
   <title><![CDATA[脑波网]]></title>
   <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2012-11-01T13:46:56+08:00</updated>
+  <updated>2012-11-03T00:26:06+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,158 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ Linux Grep OR , Grep AND, Grep NOT]]></title>
+    <link href="http://dexterdeng.github.com/blog/2012/11/03/linux-grep-or/"/>
+    <updated>2012-11-03T00:11:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2012/11/03/linux-grep-or</id>
+    <content type="html"><![CDATA[<p><strong>Question:</strong> Can you explain how to use <code>OR</code>, <code>AND</code> and <code>NOT</code> operators in Unix grep command with some examples?</p>
+
+<p><strong>Answer:</strong> In grep, we have options equivalent to <code>OR</code> and <code>NOT</code> operators. There is no grep <code>AND</code> opearator. But, you can simulate <code>AND</code> using patterns. The examples mentioned below will help you to understand how to use <code>OR</code>, <code>AND</code> and <code>NOT</code> in Linux grep command.</p>
+
+<p>The following employee.txt file is used in the following examples.</p>
+
+<pre><code>$ cat employee.txt
+100  Thomas  Manager    Sales       $5,000
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+400  Nisha   Manager    Marketing   $9,500
+500  Randy   Manager    Sales       $6,000
+</code></pre>
+
+<p>You already knew that grep is extremely powerful based on these grep command examples.</p>
+
+<h2>Grep OR Operator</h2>
+
+<p>Use any one of the following 4 methods for grep OR. I prefer method number 3 mentioned below for grep OR operator.</p>
+
+<h3>1. Grep OR Using \|</h3>
+
+<p>If you use the grep command without any option, you need to use <code>\|</code> to separate multiple patterns for the or condition.</p>
+
+<pre><code>grep 'pattern1\|pattern2' filename
+</code></pre>
+
+<p>For example, grep either Tech or Sales from the employee.txt file. Without the back slash in front of the pipe, the following will not work.</p>
+
+<pre><code>$ grep 'Tech\|Sales' employee.txt
+100  Thomas  Manager    Sales       $5,000
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+500  Randy   Manager    Sales       $6,000
+</code></pre>
+
+<h3>2. Grep OR Using -E</h3>
+
+<p><code>grep -E</code> option is for extended regexp. If you use the grep command with <code>-E</code> option, you just need to use | to separate multiple patterns for the or condition.</p>
+
+<pre><code>grep -E 'pattern1|pattern2' filename
+</code></pre>
+
+<p>For example, grep either Tech or Sales from the employee.txt file. Just use the | to separate multiple OR patterns.</p>
+
+<pre><code>$ grep -E 'Tech|Sales' employee.txt
+100  Thomas  Manager    Sales       $5,000
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+500  Randy   Manager    Sales       $6,000
+</code></pre>
+
+<h3>3. Grep OR Using egrep</h3>
+
+<p>egrep is exactly same as <code>grep -E</code>. So, use egrep (without any option) and separate multiple patterns for the or condition.</p>
+
+<pre><code>egrep 'pattern1|pattern2' filename
+</code></pre>
+
+<p>For example, grep either Tech or Sales from the employee.txt file. Just use the | to separate multiple OR patterns.</p>
+
+<pre><code>$ egrep 'Tech|Sales' employee.txt
+100  Thomas  Manager    Sales       $5,000
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+500  Randy   Manager    Sales       $6,000
+</code></pre>
+
+<h3>4. Grep OR Using grep -e</h3>
+
+<p>Using grep -e option you can pass only one parameter. Use multiple <code>-e</code> option in a single command to use multiple patterns for the or condition.</p>
+
+<pre><code>grep -e pattern1 -e pattern2 filename
+</code></pre>
+
+<p>For example, grep either Tech or Sales from the employee.txt file. Use multiple <code>-e</code> option with grep for the multiple OR patterns.</p>
+
+<pre><code>$ grep -e Tech -e Sales employee.txt
+100  Thomas  Manager    Sales       $5,000
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+500  Randy   Manager    Sales       $6,000
+Grep AND
+</code></pre>
+
+<h3>5. Grep AND using <code>-E ‘pattern1.*pattern2'</code></h3>
+
+<p>There is no AND operator in grep. But, you can simulate AND using grep -E option.</p>
+
+<pre><code>grep -E 'pattern1.*pattern2' filename
+grep -E 'pattern1.*pattern2|pattern2.*pattern1' filename
+</code></pre>
+
+<p>The following example will grep all the lines that contain both “Dev” and “Tech” in it (in the same order).</p>
+
+<pre><code>$ grep -E 'Dev.*Tech' employee.txt
+200  Jason   Developer  Technology  $5,500
+</code></pre>
+
+<p>The following example will grep all the lines that contain both “Manager” and “Sales” in it (in any order).</p>
+
+<pre><code>$ grep -E 'Manager.*Sales|Sales.*Manager' employee.txt
+</code></pre>
+
+<p>Note: Using regular expressions in grep is very powerful if you know how to use it effectively.</p>
+
+<h3>6. Grep AND using Multiple grep command</h3>
+
+<p>You can also use multiple grep command separated by pipe to simulate AND scenario.</p>
+
+<pre><code>grep -E 'pattern1' filename | grep -E 'pattern2'
+</code></pre>
+
+<p>The following example will grep all the lines that contain both “Manager” and “Sales” in the same line.</p>
+
+<pre><code>$ grep Manager employee.txt | grep Sales
+100  Thomas  Manager    Sales       $5,000
+500  Randy   Manager    Sales       $6,000
+Grep NOT
+</code></pre>
+
+<h3>7. Grep NOT using grep -v</h3>
+
+<p>Using grep <code>-v</code> you can simulate the NOT conditions. <code>-v</code> option is for invert match. i.e It matches all the lines except the given pattern.</p>
+
+<pre><code>grep -v 'pattern1' filename
+</code></pre>
+
+<p>For example, display all the lines except those that contains the keyword “Sales”.</p>
+
+<pre><code>$ grep -v Sales employee.txt
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+400  Nisha   Manager    Marketing   $9,500
+</code></pre>
+
+<p>You can also combine NOT with other operator to get some powerful combinations.</p>
+
+<p>For example, the following will display either Manager or Developer (bot ignore Sales).</p>
+
+<pre><code>$ egrep 'Manager|Developer' employee.txt | grep -v Sales
+200  Jason   Developer  Technology  $5,500
+400  Nisha   Manager    Marketing   $9,500
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Integrate tire elasticsearch on bad server]]></title>
