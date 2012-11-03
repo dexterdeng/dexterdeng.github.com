@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Integrate tire elasticsearch on bad server - 脑波网</title>
+  <title>Never call save/update in before/after_save filter - 脑波网</title>
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="Installing the JRE
-Type the following commands into your SSH terminal. apt-get install openjdk-6-jdk You should also have JDK 6 or above installed &hellip;">
+  <meta name="description" content="Check two source code first: def update_attribute(name, value) send(name.to_s + '=', value) save(false)
+end and def update_attributes(attributes) &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +19,7 @@ Type the following commands into your SSH terminal. apt-get install openjdk-6-jd
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://dexterdeng.github.com/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/">
+  <link rel="canonical" href="http://dexterdeng.github.com/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -70,7 +70,7 @@ Type the following commands into your SSH terminal. apt-get install openjdk-6-jd
   
   <header>
     
-      <h1 class="entry-title">Integrate Tire Elasticsearch on Bad Server</h1>
+      <h1 class="entry-title">Never Call Save/update in Before/after_save Filter</h1>
     
     
       <p class="meta">
@@ -86,146 +86,35 @@ Type the following commands into your SSH terminal. apt-get install openjdk-6-jd
   
 
 
-<time datetime="2012-11-01T13:24:00+08:00" pubdate data-updated="true">Nov 1<span>st</span>, 2012</time>
+<time datetime="2012-11-03T17:02:00+08:00" pubdate data-updated="true">Nov 3<span>rd</span>, 2012</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>Installing the JRE
-Type the following commands into your SSH terminal.</p>
+<div class="entry-content"><p>Check two source code first:</p>
 
-<pre><code>apt-get install openjdk-6-jdk 
+<pre><code>def update_attribute(name, value)
+  send(name.to_s + '=', value)
+  save(false)
+end
 </code></pre>
 
-<p>You should also have JDK 6 or above installed.</p>
+<p>and</p>
 
-<pre><code>$ curl -k -L -o elasticsearch-0.19.0.tar.gz http://github.com/downloads/elasticsearch/elasticsearch/elasticsearch-0.19.0.tar.gz
-$ tar -zxvf elasticsearch-0.19.0.tar.gz
-$ ./elasticsearch-0.19.0/bin/elasticsearch -f
+<pre><code> def update_attributes(attributes)
+   self.attributes = attributes
+   save
+ end
 </code></pre>
 
-<p>How to make it manage by ubuntu better.</p>
+<p>Check the source code, these 2 <code>update</code> methods contain <code>save</code>. in fact,
+<code>update</code>  always means <code>save</code>.  these methods can&#8217;t be in <code>after_save</code>,
+<code>before_save</code>. as  if you call <code>save</code>, <code>save</code> trigger  <code>before_save/after_save</code>,
+and <code>before_save/after_save</code> trigger <code>save</code> again. &#8230;  No ending.</p>
 
-<pre><code>$ cp ./elasticsearch-0.19 /user/local/elasticsearch
-</code></pre>
-
-<p>make <code>/etc/init.d/elasticsearch</code></p>
-
-<pre><code>$ vi /etc/init.d/elasticsearch
-
-
-### END INIT INFO
-ES_HOME=/usr/local/elasticsearch
-export ES_MIN_MEM=32m
-export ES_MAX_MEM=128m
-DAEMON=$ES_HOME/bin/elasticsearch
-NAME=elasticsearch
-DESC=elasticsearch
-PID_FILE=/var/run/$NAME.pid
-LOG_DIR=/var/log/$NAME
-DATA_DIR=/var/lib/$NAME
-WORK_DIR=/tmp/$NAME
-CONFIG_FILE=/etc/$NAME/elasticsearch.yml
-DAEMON_OPTS="-p $PID_FILE -Des.config=$CONFIG_FILE -Des.path.home=$ES_HOME -Des.path.logs=$LOG_DIR -        Des.path.data=$DATA_DIR -Des.path.work=$WORK_DIR"
-
-
-test -x $DAEMON || exit 0
-
-set -e
-
-case "$1" in
-  start)
-    echo -n "Starting $DESC: "
-    mkdir -p $LOG_DIR $DATA_DIR $WORK_DIR
-    if start-stop-daemon --start --pidfile $PID_FILE --startas $DAEMON -- $DAEMON_OPTS
-    then
-        echo "started."
-    else
-        echo "failed."
-    fi
-    ;;
-  stop)
-    echo -n "Stopping $DESC: "
-    if start-stop-daemon --stop --pidfile $PID_FILE
-    then
-        echo "stopped."
-    else
-        echo "failed."
-    fi
-    ;;
-  restart|force-reload)
-    ${0} stop
-    sleep 0.5
-    ${0} start
-    ;;
-  *)
-    N=/etc/init.d/$NAME
-    echo "Usage: $N {start|stop|restart|force-reload}" &gt;&amp;2
-    exit 1
-    ;;
-esac
-exit 0
-</code></pre>
-
-<p>To a number suitable for the size of your forum.</p>
-
-<p>I reccomend approximately <code>256mb</code> for the MIN_MEM and <code>1 GB</code> for the MAX_MEM per <code>1 million</code> posts on your forum.</p>
-
-<pre><code>1 Million Posts: 256m:1g
-2 Million Posts: 512m:2g
-3 Million Posts: 768m:3g
-4 Million Posts: 1024m:4g
-etc
-</code></pre>
-
-<p>This will not mean the service will use all that available memory, however it will have it at its disposal if required.</p>
-
-<p>So for example a <code>3 Million</code> Post forum would edit</p>
-
-<pre><code>export ES_MIN_MEM=768m
-export ES_MAX_MEM=3g
-</code></pre>
-
-<p>make the script executable and start automaticly.</p>
-
-<pre><code>chmod a+x /etc/init.d/elasticsearch 
-update-rc.d elasticsearch defaults
-/etc/init.d/elasticsearch start
-
-vi /etc/elasticsearch/elasticsearch.yml
-</code></pre>
-
-<p> and add this</p>
-
-<pre><code>#/etc/elasticsearch/elasticsearch.yml
-network :
-  host :  127.0.0.1
-path:
-  logs: /var/log/elasticsearch
-  data: /var/data/elasticsearch
-
-cluster.name: PUT-SOMETHING-UNIQUE-HERE
-</code></pre>
-
-<p>make data folder</p>
-
-<pre><code>mkdir -p  /var/data/elasticsearch
-</code></pre>
-
-<p>make sure  <code>127.0.0.1 localhost</code> in your <code>/ect/hosts</code>, this is very important, it&#8217;s waste of my time.</p>
-
-<p>now you can start to build the index.</p>
-
-<pre><code>RAILS_ENV=production rake environment tire:import CLASS='List'
-</code></pre>
-
-<p>on mac, there is  a simpler way:</p>
-
-<pre><code>brew install elasticsearch
-elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elasticsearch.yml
-</code></pre>
+<p>This is very important.</p>
 </div>
 
 
@@ -248,12 +137,12 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
   
 
 
-<time datetime="2012-11-01T13:24:00+08:00" pubdate data-updated="true">Nov 1<span>st</span>, 2012</time>
+<time datetime="2012-11-03T17:02:00+08:00" pubdate data-updated="true">Nov 3<span>rd</span>, 2012</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/rails/'>rails</a>
+    <a class='category' href='/blog/categories/rails/'>Rails</a>
   
 </span>
 
@@ -262,7 +151,7 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter/" >Tweet</a>
   
   
   <div class="g-plusone" data-size="medium"></div>
@@ -275,10 +164,10 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2012/10/30/add-user-to-group/" title="Previous Post: add user to group">&laquo; add user to group</a>
+        <a class="basic-alignment left" href="/blog/2012/11/03/linux-grep-or/" title="Previous Post:  Linux Grep OR , Grep AND, Grep NOT">&laquo;  Linux Grep OR , Grep AND, Grep NOT</a>
       
       
-        <a class="basic-alignment right" href="/blog/2012/11/03/linux-grep-or/" title="Next Post:  Linux Grep OR , Grep AND, Grep NOT"> Linux Grep OR , Grep AND, Grep NOT &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2012/11/03/skip-vadation-or-skip-flilter/" title="Next Post: skip vadation or skip flilter">skip vadation or skip flilter &raquo;</a>
       
     </p>
   </footer>
@@ -370,8 +259,8 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://dexterdeng.github.com/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/';
-        var disqus_url = 'http://dexterdeng.github.com/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/';
+        var disqus_identifier = 'http://dexterdeng.github.com/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter/';
+        var disqus_url = 'http://dexterdeng.github.com/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter/';
         var disqus_script = 'embed.js';
       
     (function () {

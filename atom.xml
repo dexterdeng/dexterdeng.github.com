@@ -4,7 +4,7 @@
   <title><![CDATA[脑波网]]></title>
   <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2012-11-03T00:26:06+08:00</updated>
+  <updated>2012-11-03T17:12:28+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,60 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[skip vadation or skip flilter]]></title>
+    <link href="http://dexterdeng.github.com/blog/2012/11/03/skip-vadation-or-skip-flilter/"/>
+    <updated>2012-11-03T17:09:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2012/11/03/skip-vadation-or-skip-flilter</id>
+    <content type="html"><![CDATA[<h3>run all validation and filters</h3>
+
+<pre><code>@user.save
+</code></pre>
+
+<h3>run  no validation but all filters</h3>
+
+<pre><code>@user.save(false)
+</code></pre>
+
+<h3>run  no validation and no filters</h3>
+
+<pre><code>@user.send(:update_without_callbacks)
+</code></pre>
+
+<p>since it is private, you need to use send</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Never call save/update in before/after_save filter]]></title>
+    <link href="http://dexterdeng.github.com/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter/"/>
+    <updated>2012-11-03T17:02:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter</id>
+    <content type="html"><![CDATA[<p>Check two source code first:</p>
+
+<pre><code>def update_attribute(name, value)
+  send(name.to_s + '=', value)
+  save(false)
+end
+</code></pre>
+
+<p>and</p>
+
+<pre><code> def update_attributes(attributes)
+   self.attributes = attributes
+   save
+ end
+</code></pre>
+
+<p>Check the source code, these 2 <code>update</code> methods contain <code>save</code>. in fact,
+<code>update</code>  always means <code>save</code>.  these methods can&#8217;t be in <code>after_save</code>,
+<code>before_save</code>. as  if you call <code>save</code>, <code>save</code> trigger  <code>before_save/after_save</code>,
+and <code>before_save/after_save</code> trigger <code>save</code> again. &#8230;  No ending.</p>
+
+<p>This is very important.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ Linux Grep OR , Grep AND, Grep NOT]]></title>

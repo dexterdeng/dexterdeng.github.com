@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: rails | 脑波网]]></title>
+  <title><![CDATA[Category: Rails | 脑波网]]></title>
   <link href="http://dexterdeng.github.com/blog/categories/rails/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2012-11-03T00:26:06+08:00</updated>
+  <updated>2012-11-03T17:12:28+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -14,143 +14,56 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Integrate tire elasticsearch on bad server]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/"/>
-    <updated>2012-11-01T13:24:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server</id>
-    <content type="html"><![CDATA[<p>Installing the JRE
-Type the following commands into your SSH terminal.</p>
+    <title type="html"><![CDATA[skip vadation or skip flilter]]></title>
+    <link href="http://dexterdeng.github.com/blog/2012/11/03/skip-vadation-or-skip-flilter/"/>
+    <updated>2012-11-03T17:09:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2012/11/03/skip-vadation-or-skip-flilter</id>
+    <content type="html"><![CDATA[<h3>run all validation and filters</h3>
 
-<pre><code>apt-get install openjdk-6-jdk 
+<pre><code>@user.save
 </code></pre>
 
-<p>You should also have JDK 6 or above installed.</p>
+<h3>run  no validation but all filters</h3>
 
-<pre><code>$ curl -k -L -o elasticsearch-0.19.0.tar.gz http://github.com/downloads/elasticsearch/elasticsearch/elasticsearch-0.19.0.tar.gz
-$ tar -zxvf elasticsearch-0.19.0.tar.gz
-$ ./elasticsearch-0.19.0/bin/elasticsearch -f
+<pre><code>@user.save(false)
 </code></pre>
 
-<p>How to make it manage by ubuntu better.</p>
+<h3>run  no validation and no filters</h3>
 
-<pre><code>$ cp ./elasticsearch-0.19 /user/local/elasticsearch
+<pre><code>@user.send(:update_without_callbacks)
 </code></pre>
 
-<p>make <code>/etc/init.d/elasticsearch</code></p>
+<p>since it is private, you need to use send</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Never call save/update in before/after_save filter]]></title>
+    <link href="http://dexterdeng.github.com/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter/"/>
+    <updated>2012-11-03T17:02:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter</id>
+    <content type="html"><![CDATA[<p>Check two source code first:</p>
 
-<pre><code>$ vi /etc/init.d/elasticsearch
-
-
-### END INIT INFO
-ES_HOME=/usr/local/elasticsearch
-export ES_MIN_MEM=32m
-export ES_MAX_MEM=128m
-DAEMON=$ES_HOME/bin/elasticsearch
-NAME=elasticsearch
-DESC=elasticsearch
-PID_FILE=/var/run/$NAME.pid
-LOG_DIR=/var/log/$NAME
-DATA_DIR=/var/lib/$NAME
-WORK_DIR=/tmp/$NAME
-CONFIG_FILE=/etc/$NAME/elasticsearch.yml
-DAEMON_OPTS="-p $PID_FILE -Des.config=$CONFIG_FILE -Des.path.home=$ES_HOME -Des.path.logs=$LOG_DIR -        Des.path.data=$DATA_DIR -Des.path.work=$WORK_DIR"
-
-
-test -x $DAEMON || exit 0
-
-set -e
-
-case "$1" in
-  start)
-    echo -n "Starting $DESC: "
-    mkdir -p $LOG_DIR $DATA_DIR $WORK_DIR
-    if start-stop-daemon --start --pidfile $PID_FILE --startas $DAEMON -- $DAEMON_OPTS
-    then
-        echo "started."
-    else
-        echo "failed."
-    fi
-    ;;
-  stop)
-    echo -n "Stopping $DESC: "
-    if start-stop-daemon --stop --pidfile $PID_FILE
-    then
-        echo "stopped."
-    else
-        echo "failed."
-    fi
-    ;;
-  restart|force-reload)
-    ${0} stop
-    sleep 0.5
-    ${0} start
-    ;;
-  *)
-    N=/etc/init.d/$NAME
-    echo "Usage: $N {start|stop|restart|force-reload}" &gt;&amp;2
-    exit 1
-    ;;
-esac
-exit 0
+<pre><code>def update_attribute(name, value)
+  send(name.to_s + '=', value)
+  save(false)
+end
 </code></pre>
 
-<p>To a number suitable for the size of your forum.</p>
+<p>and</p>
 
-<p>I reccomend approximately <code>256mb</code> for the MIN_MEM and <code>1 GB</code> for the MAX_MEM per <code>1 million</code> posts on your forum.</p>
-
-<pre><code>1 Million Posts: 256m:1g
-2 Million Posts: 512m:2g
-3 Million Posts: 768m:3g
-4 Million Posts: 1024m:4g
-etc
+<pre><code> def update_attributes(attributes)
+   self.attributes = attributes
+   save
+ end
 </code></pre>
 
-<p>This will not mean the service will use all that available memory, however it will have it at its disposal if required.</p>
+<p>Check the source code, these 2 <code>update</code> methods contain <code>save</code>. in fact,
+<code>update</code>  always means <code>save</code>.  these methods can't be in <code>after_save</code>,
+<code>before_save</code>. as  if you call <code>save</code>, <code>save</code> trigger  <code>before_save/after_save</code>,
+and <code>before_save/after_save</code> trigger <code>save</code> again. ...  No ending.</p>
 
-<p>So for example a <code>3 Million</code> Post forum would edit</p>
-
-<pre><code>export ES_MIN_MEM=768m
-export ES_MAX_MEM=3g
-</code></pre>
-
-<p>make the script executable and start automaticly.</p>
-
-<pre><code>chmod a+x /etc/init.d/elasticsearch 
-update-rc.d elasticsearch defaults
-/etc/init.d/elasticsearch start
-
-vi /etc/elasticsearch/elasticsearch.yml
-</code></pre>
-
-<p> and add this</p>
-
-<pre><code>#/etc/elasticsearch/elasticsearch.yml
-network :
-  host :  127.0.0.1
-path:
-  logs: /var/log/elasticsearch
-  data: /var/data/elasticsearch
-
-cluster.name: PUT-SOMETHING-UNIQUE-HERE
-</code></pre>
-
-<p>make data folder</p>
-
-<pre><code>mkdir -p  /var/data/elasticsearch
-</code></pre>
-
-<p>make sure  <code>127.0.0.1 localhost</code> in your <code>/ect/hosts</code>, this is very important, it's waste of my time.</p>
-
-<p>now you can start to build the index.</p>
-
-<pre><code>RAILS_ENV=production rake environment tire:import CLASS='List'
-</code></pre>
-
-<p>on mac, there is  a simpler way:</p>
-
-<pre><code>brew install elasticsearch
-elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elasticsearch.yml
-</code></pre>
+<p>This is very important.</p>
 ]]></content>
   </entry>
   
