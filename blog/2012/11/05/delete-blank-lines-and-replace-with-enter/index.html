@@ -5,11 +5,14 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: linux - 脑波网</title>
+  <title>delete blank lines and replace with enter - 脑波网</title>
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="Category: linux">
+  <meta name="description" content="How to replace , with enter e.g. How to replace aaa,bbb,ccc with aaa
+bbb
+ccc open it with mvim :%s/,/^M/g
+# you need to type CTRL-V &lt;CR&gt; to get &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +21,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://dexterdeng.github.comblog/categories/linux/">
+  <link rel="canonical" href="http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -65,50 +68,113 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: Linux</h1>
+    
+      <h1 class="entry-title">Delete Blank Lines and Replace With Enter</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-05T17:00:00+08:00" pubdate data-updated="true">Nov 5<span>th</span>, 2012</time>
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><h3>How to replace , with enter</h3>
 
-  
-  <h2>2012</h2>
+<p>e.g. How to replace <code>aaa,bbb,ccc</code> with</p>
 
-<article>
-  
-<h1><a href="/blog/2012/11/03/linux-grep-or/"> Linux Grep OR , Grep AND, Grep NOT</a></h1>
-<time datetime="2012-11-03T00:11:00+08:00" pubdate><span class='month'>Nov</span> <span class='day'>03</span> <span class='year'>2012</span></time>
+<pre><code>aaa
+bbb
+ccc
+</code></pre>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/linux/'>linux</a></span>
-</footer>
+<p>open it with <code>mvim</code></p>
 
+<pre><code>:%s/,/^M/g
+# you need to type CTRL-V &lt;CR&gt; to get a ^M here
+</code></pre>
 
-</article>
+<h3>How to remove blank lines</h3>
 
-
-
-<article>
-  
-<h1><a href="/blog/2012/10/30/add-user-to-group/">add user to group</a></h1>
-<time datetime="2012-10-30T16:55:00+08:00" pubdate><span class='month'>Oct</span> <span class='day'>30</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/linux/'>linux</a></span>
-</footer>
-
-
-</article>
-
+<pre><code>:%g/^\s*$/d
+</code></pre>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Dexter Deng</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-05T17:00:00+08:00" pubdate data-updated="true">Nov 5<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/vim/'>vim</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/11/03/skip-vadation-or-skip-flilter/" title="Previous Post: skip vadation or skip flilter">&laquo; skip vadation or skip flilter</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -189,7 +255,10 @@
       var disqus_shortname = 'dexterdengsblog';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/';
+        var disqus_url = 'http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

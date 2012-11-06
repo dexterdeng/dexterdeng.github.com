@@ -4,7 +4,7 @@
   <title><![CDATA[脑波网]]></title>
   <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2012-11-03T17:12:28+08:00</updated>
+  <updated>2012-11-06T11:42:00+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,33 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[delete blank lines and replace with enter]]></title>
+    <link href="http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/"/>
+    <updated>2012-11-05T17:00:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter</id>
+    <content type="html"><![CDATA[<h3>How to replace , with enter</h3>
+
+<p>e.g. How to replace <code>aaa,bbb,ccc</code> with</p>
+
+<pre><code>aaa
+bbb
+ccc
+</code></pre>
+
+<p>open it with <code>mvim</code></p>
+
+<pre><code>:%s/,/^M/g
+# you need to type CTRL-V &lt;CR&gt; to get a ^M here
+</code></pre>
+
+<h3>How to remove blank lines</h3>
+
+<pre><code>:%g/^\s*$/d
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[skip vadation or skip flilter]]></title>
