@@ -9,10 +9,8 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="How to replace , with enter e.g. How to replace aaa,bbb,ccc with aaa
-bbb
-ccc open it with mvim :%s/,/^M/g
-# you need to type CTRL-V &lt;CR&gt; to get &hellip;">
+  <meta name="description" content="install elasticsearch-analysis-mmseg cd /usr/local/elasticsearch
+sudo bin/plugin -install medcl/elasticsearch-analysis-mmseg/1.1.0 configure vi /etc/ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -69,6 +67,96 @@ ccc open it with mvim :%s/,/^M/g
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/">How to Integrate Mmseg With Elasticsearch</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-06T11:46:00+08:00" pubdate data-updated="true">Nov 6<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h3>install elasticsearch-analysis-mmseg</h3>
+
+<pre><code>cd /usr/local/elasticsearch
+sudo bin/plugin -install medcl/elasticsearch-analysis-mmseg/1.1.0  
+</code></pre>
+
+<h3>configure</h3>
+
+<pre><code>vi /etc/elasticsearch/elasticsearch.yml
+</code></pre>
+
+<p>add these lines in the elasticsearch</p>
+
+<pre><code>index:
+  analysis:
+    analyzer:
+      mmseg
+        alias: [news_analyzer, mmseg_analyzer]
+        type: org.elasticsearch.index.analysis.MMsegAnalyzerProvider
+    tokenizer:
+      mmseg_maxword:
+        type: mmseg
+        seg_type: "max_word"
+      mmseg_complex:
+        type: mmseg
+        seg_type: "complex"
+      mmseg_simple:
+        type: mmseg
+        seg_type: "simple"
+index.analysis.analyzer.default.type : "mmseg"
+</code></pre>
+
+<p>it means define analyzer and tokenizer. and the default analyzer</p>
+
+<h3>restart elasticsearch</h3>
+
+<pre><code>/etc/init.d/elasticsearch stop
+/etc/init.d/elasticsearch start
+</code></pre>
+
+<h3>How to use it</h3>
+
+<pre><code>tire.mapping do
+  indexes :id,             type: 'integer', :index =&gt; :not_analyzed
+  indexes :name,           type: "string", index: "analyzed", analyzer: "mmseg"
+  indexes :pinyin,         type: 'string'
+  indexes :created_at,     type: 'date'
+  indexes :updated_at,     type: 'date'
+end       
+</code></pre>
+
+<h3>regenerate index</h3>
+
+<pre><code>$ RAILS_ENV=production bundle exec rake environment tire:import CLASS='Article' FORCE=true
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -790,6 +878,10 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/">How to integrate mmseg with elasticsearch</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/">delete blank lines and replace with enter</a>
       </li>
     
@@ -803,10 +895,6 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
     
       <li class="post">
         <a href="/blog/2012/11/03/linux-grep-or/"> Linux Grep OR , Grep AND, Grep NOT</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/">Integrate tire elasticsearch on bad server</a>
       </li>
     
   </ul>

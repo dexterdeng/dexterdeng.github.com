@@ -5,11 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>MySQL 'Incorrect key file for table' error - 脑波网</title>
+  <title>How to integrate mmseg with elasticsearch - 脑波网</title>
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="When saving a record to a MySQL table the other day I got the error message &#8220;Incorrect key file for table &#8216;mytable&#8217;; try to repair &hellip;">
+  <meta name="description" content="install elasticsearch-analysis-mmseg cd /usr/local/elasticsearch
+sudo bin/plugin -install medcl/elasticsearch-analysis-mmseg/1.1.0 configure vi /etc/ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://dexterdeng.github.com/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/">
+  <link rel="canonical" href="http://dexterdeng.github.com/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -69,7 +70,7 @@
   
   <header>
     
-      <h1 class="entry-title">MySQL 'Incorrect Key File for Table' Error</h1>
+      <h1 class="entry-title">How to Integrate Mmseg With Elasticsearch</h1>
     
     
       <p class="meta">
@@ -85,27 +86,68 @@
   
 
 
-<time datetime="2012-10-30T02:47:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
+<time datetime="2012-11-06T11:46:00+08:00" pubdate data-updated="true">Nov 6<span>th</span>, 2012</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>When saving a record to a MySQL table the other day I got the error message &#8220;Incorrect key file for table &#8216;mytable&#8217;; try to repair it&#8221;. I am uncertain why the error occured and how to ensure it doesn&#8217;t happen again in the future but a quick fix for the time being is simple.</p>
+<div class="entry-content"><h3>install elasticsearch-analysis-mmseg</h3>
 
-<h2>How to repair a MySQL table</h2>
-
-<p>All you need to do is to repair the table by running the following SQL command, where &#8220;mytable&#8221; is the name of the table that gave the error:</p>
-
-<pre><code>REPAIR TABLE `mytable`;
+<pre><code>cd /usr/local/elasticsearch
+sudo bin/plugin -install medcl/elasticsearch-analysis-mmseg/1.1.0  
 </code></pre>
 
-<p>You can run this from e.g. the MySQL CLI or phpMyAdmin. From phpMyAdmin select the table, then &#8220;Operations&#8221; from the navigation tabs in the right frame above the table info; then &#8220;Repair Table&#8221; from the &#8220;Table maintenance&#8221; options at the bottom of the page.</p>
+<h3>configure</h3>
 
-<h2>When the table is /tmp/#sql_xxx_x.MYI</h2>
+<pre><code>vi /etc/elasticsearch/elasticsearch.yml
+</code></pre>
 
-<p>If the error looks like &#8220;Incorrect key file for table &#8216;/tmp/#sql_xxx_x.MYI&#8217;; try to repair it&#8221; where it refers to a temporary location on the filesystem, it&#8217;s likely you&#8217;ve run out of diskspace. Read my follow up post for more information.</p>
+<p>add these lines in the elasticsearch</p>
+
+<pre><code>index:
+  analysis:
+    analyzer:
+      mmseg
+        alias: [news_analyzer, mmseg_analyzer]
+        type: org.elasticsearch.index.analysis.MMsegAnalyzerProvider
+    tokenizer:
+      mmseg_maxword:
+        type: mmseg
+        seg_type: "max_word"
+      mmseg_complex:
+        type: mmseg
+        seg_type: "complex"
+      mmseg_simple:
+        type: mmseg
+        seg_type: "simple"
+index.analysis.analyzer.default.type : "mmseg"
+</code></pre>
+
+<p>it means define analyzer and tokenizer. and the default analyzer</p>
+
+<h3>restart elasticsearch</h3>
+
+<pre><code>/etc/init.d/elasticsearch stop
+/etc/init.d/elasticsearch start
+</code></pre>
+
+<h3>How to use it</h3>
+
+<pre><code>tire.mapping do
+  indexes :id,             type: 'integer', :index =&gt; :not_analyzed
+  indexes :name,           type: "string", index: "analyzed", analyzer: "mmseg"
+  indexes :pinyin,         type: 'string'
+  indexes :created_at,     type: 'date'
+  indexes :updated_at,     type: 'date'
+end       
+</code></pre>
+
+<h3>regenerate index</h3>
+
+<pre><code>$ RAILS_ENV=production bundle exec rake environment tire:import CLASS='Article' FORCE=true
+</code></pre>
 </div>
 
 
@@ -128,12 +170,12 @@
   
 
 
-<time datetime="2012-10-30T02:47:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
+<time datetime="2012-11-06T11:46:00+08:00" pubdate data-updated="true">Nov 6<span>th</span>, 2012</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/mysql/'>mysql</a>
+    <a class='category' href='/blog/categories/elasticsearch/'>elasticsearch</a>
   
 </span>
 
@@ -142,7 +184,7 @@
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/" >Tweet</a>
   
   
   <div class="g-plusone" data-size="medium"></div>
@@ -155,10 +197,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2012/10/23/kai-bo-liao-%2Cji-lu-wo-de-nao-bo-.-./" title="Previous Post: 开博了，记录我的脑波">&laquo; 开博了，记录我的脑波</a>
+        <a class="basic-alignment left" href="/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/" title="Previous Post: delete blank lines and replace with enter">&laquo; delete blank lines and replace with enter</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2012/10/30/add-user-to-group/" title="Next Post: add user to group">add user to group &raquo;</a>
       
     </p>
   </footer>
@@ -250,8 +290,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://dexterdeng.github.com/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/';
-        var disqus_url = 'http://dexterdeng.github.com/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/';
+        var disqus_identifier = 'http://dexterdeng.github.com/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/';
+        var disqus_url = 'http://dexterdeng.github.com/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/';
         var disqus_script = 'embed.js';
       
     (function () {
