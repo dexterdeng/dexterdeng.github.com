@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>add user to group - 脑波网</title>
+  <title>脑波网</title>
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="How can I add a user to a group under Linux operating system? You can use the useradd or usermod commands to add a user to a group. The useradd &hellip;">
+  <meta name="description" content="When saving a record to a MySQL table the other day I got the error message &#8220;Incorrect key file for table &#8216;mytable&#8217;; try to repair &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/">
+  <link rel="canonical" href="http://dexterdeng.github.com/blog/page/2/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -64,12 +64,15 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div>
-<article class="hentry" role="article">
+      <div class="blog-index">
   
+  
+  
+    <article>
+      
   <header>
     
-      <h1 class="entry-title">Add User to Group</h1>
+      <h1 class="entry-title"><a href="/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/">MySQL &#8216;Incorrect Key File for Table&#8217; Error</a></h1>
     
     
       <p class="meta">
@@ -85,157 +88,78 @@
   
 
 
-<time datetime="2012-10-30T16:55:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
+<time datetime="2012-10-30T02:47:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>How can I add a user to a group under Linux operating system?</p>
+  <div class="entry-content"><p>When saving a record to a MySQL table the other day I got the error message &#8220;Incorrect key file for table &#8216;mytable&#8217;; try to repair it&#8221;. I am uncertain why the error occured and how to ensure it doesn&#8217;t happen again in the future but a quick fix for the time being is simple.</p>
 
-<p>You can use the useradd or usermod commands to add a user to a group. The useradd command creates a new user or update default new user information. The usermod command modifies a user account i.e. it is useful to add user to existing group. There are two types of group. First is primary user group and other is secondary group. All user account related information is stored in <code>/etc/passwd</code>, <code>/etc/shadow</code> and <code>/etc/group</code> files to store user information.</p>
+<h2>How to repair a MySQL table</h2>
 
-<h3>useradd Example - Add A New User To Secondary Group</h3>
+<p>All you need to do is to repair the table by running the following SQL command, where &#8220;mytable&#8221; is the name of the table that gave the error:</p>
 
-<p>You need to the useradd command to add new users to existing group (or create a new group and then add user). If group does not exist, create it. The syntax is as follows:</p>
-
-<pre><code>useradd -G {group-name} username
+<pre><code>REPAIR TABLE `mytable`;
 </code></pre>
 
-<p>In this example, create a new user called vivek and add it to group called developers. First login as a root user (make sure group developers exists), enter:</p>
+<p>You can run this from e.g. the MySQL CLI or phpMyAdmin. From phpMyAdmin select the table, then &#8220;Operations&#8221; from the navigation tabs in the right frame above the table info; then &#8220;Repair Table&#8221; from the &#8220;Table maintenance&#8221; options at the bottom of the page.</p>
 
-<pre><code># grep developers /etc/group
-</code></pre>
+<h2>When the table is /tmp/#sql_xxx_x.MYI</h2>
 
-<p>Output:</p>
-
-<pre><code>developers:x:1124:
-</code></pre>
-
-<p>If you do not see any output then you need to add group developers using groupadd command:</p>
-
-<pre><code># groupadd developers
-</code></pre>
-
-<p>Next, add a user called vivek to group developers:</p>
-
-<pre><code># useradd -G developers vivek
-</code></pre>
-
-<p>Setup password for user vivek:</p>
-
-<pre><code># passwd vivek
-</code></pre>
-
-<p>Ensure that user added properly to group developers:</p>
-
-<pre><code># id vivek
-</code></pre>
-
-<p>Output:</p>
-
-<pre><code>uid=1122(vivek) gid=1125(vivek) groups=1125(vivek),1124(developers)
-</code></pre>
-
-<p>Please note that capital <code>G (-G)</code> option add user to a list of supplementary groups. Each group is separated from the next by a comma, with no intervening whitespace. For example, add user jerry to groups admins, ftp, www, and developers, enter:</p>
-
-<pre><code># useradd -G admins,ftp,www,developers jerry
-</code></pre>
-
-<h3>useradd example - Add a new user to primary group</h3>
-
-<p>To add a user tony to group developers use following command:</p>
-
-<pre><code># useradd -g developers tony
-# id tony
-</code></pre>
-
-<p>Sample outputs:</p>
-
-<pre><code>uid=1123(tony) gid=1124(developers) groups=1124(developers)
-</code></pre>
-
-<p>Please note that small -g option add user to initial login group (primary group). The group name must exist. A group number must refer to an already existing group.</p>
-
-<pre><code>usermod example - Add a existing user to existing group
-</code></pre>
-
-<p>Add existing user tony to ftp supplementary/secondary group with usermod command using -a option ~ i.e. add the user to the supplemental group(s). Use only with -G option :</p>
-
-<pre><code># usermod -a -G ftp tony
-</code></pre>
-
-<p>Change existing user tony primary group to www:</p>
-
-<pre><code># usermod -g www tony
-</code></pre>
+<p>If the error looks like &#8220;Incorrect key file for table &#8216;/tmp/#sql_xxx_x.MYI&#8217;; try to repair it&#8221; where it refers to a temporary location on the filesystem, it&#8217;s likely you&#8217;ve run out of diskspace. Read my follow up post for more information.</p>
 </div>
+  
+  
 
 
-  <footer>
-    <p class="meta">
+    </article>
+  
+  
+    <article>
       
-  
-
-<span class="byline author vcard">Posted by <span class="fn">Dexter Deng</span></span>
-
-      
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-10-30T16:55:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
-      
-
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/linux/'>linux</a>
-  
-</span>
-
-
-    </p>
+  <header>
     
-      <div class="sharing">
-  
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/" >Tweet</a>
-  
-  
-  <div class="g-plusone" data-size="medium"></div>
-  
-  
-    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
-  
-</div>
-
+      <h1 class="entry-title"><a href="/blog/2012/10/23/kai-bo-liao-%2Cji-lu-wo-de-nao-bo-.-./">开博了，记录我的脑波</a></h1>
     
-    <p class="meta">
-      
-        <a class="basic-alignment left" href="/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/" title="Previous Post: MySQL 'Incorrect key file for table' error">&laquo; MySQL 'Incorrect key file for table' error</a>
-      
-      
-        <a class="basic-alignment right" href="/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/" title="Next Post: Integrate tire elasticsearch on bad server">Integrate tire elasticsearch on bad server &raquo;</a>
-      
-    </p>
-  </footer>
-</article>
+    
+      <p class="meta">
+        
 
-  <section>
-    <h1>Comments</h1>
-    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-10-23T16:21:00+08:00" pubdate data-updated="true">Oct 23<span>rd</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>开博了，记录我的脑波。。</p>
 </div>
-  </section>
+  
+  
 
+
+    </article>
+  
+  <div class="pagination">
+    
+    <a href="/blog/archives">归档文章</a>
+    
+    <a class="next" href="/">更新 &rarr;</a>
+    
+  </div>
 </div>
-
 <aside class="sidebar">
   
     <section>
@@ -269,7 +193,7 @@
 <section>
   <h1>Latest Tweets</h1>
   <ul id="tweets">
-    <li class="loading">Status updating...</li>
+    <li class="loading">Status updating&#8230;</li>
   </ul>
   <script type="text/javascript">
     $.domReady(function(){
@@ -298,7 +222,6 @@
   
 </aside>
 
-
     </div>
   </div>
   <footer role="contentinfo"><p>
@@ -313,10 +236,7 @@
       var disqus_shortname = 'dexterdengsblog';
       
         
-        // var disqus_developer = 1;
-        var disqus_identifier = 'http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/';
-        var disqus_url = 'http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/';
-        var disqus_script = 'embed.js';
+        var disqus_script = 'count.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

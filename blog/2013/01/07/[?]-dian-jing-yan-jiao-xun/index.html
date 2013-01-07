@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>add user to group - 脑波网</title>
+  <title>一点经验教训 - 脑波网</title>
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="How can I add a user to a group under Linux operating system? You can use the useradd or usermod commands to add a user to a group. The useradd &hellip;">
+  <meta name="description" content="流量刚过15k，一个新的里程碑 坚持做两年的项目， 流量上了一个新阶段。 很多问题随之产生， 这里就最近的一些经验。稍微总结一下。 数据库session表超大，导致dump文件超大，11G 最近数据库dump文件超大，一直欣慰的以为数据量大了，实则可笑至极。 在解决这个问题过程中， 我找到几个方案 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/">
+  <link rel="canonical" href="http://dexterdeng.github.com/blog/2013/01/07/%5B%3F%5D-dian-jing-yan-jiao-xun/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -69,7 +69,7 @@
   
   <header>
     
-      <h1 class="entry-title">Add User to Group</h1>
+      <h1 class="entry-title">一点经验教训</h1>
     
     
       <p class="meta">
@@ -85,91 +85,62 @@
   
 
 
-<time datetime="2012-10-30T16:55:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
+<time datetime="2013-01-07T12:27:00+08:00" pubdate data-updated="true">Jan 7<span>th</span>, 2013</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>How can I add a user to a group under Linux operating system?</p>
+<div class="entry-content"><h3>流量刚过15k，一个新的里程碑</h3>
 
-<p>You can use the useradd or usermod commands to add a user to a group. The useradd command creates a new user or update default new user information. The usermod command modifies a user account i.e. it is useful to add user to existing group. There are two types of group. First is primary user group and other is secondary group. All user account related information is stored in <code>/etc/passwd</code>, <code>/etc/shadow</code> and <code>/etc/group</code> files to store user information.</p>
+<p>坚持做两年的项目， 流量上了一个新阶段。</p>
 
-<h3>useradd Example - Add A New User To Secondary Group</h3>
+<p>很多问题随之产生， 这里就最近的一些经验。稍微总结一下。</p>
 
-<p>You need to the useradd command to add new users to existing group (or create a new group and then add user). If group does not exist, create it. The syntax is as follows:</p>
+<h3>数据库session表超大，导致dump文件超大，11G</h3>
 
-<pre><code>useradd -G {group-name} username
-</code></pre>
+<p>最近数据库dump文件超大，一直欣慰的以为数据量大了，实则可笑至极。</p>
 
-<p>In this example, create a new user called vivek and add it to group called developers. First login as a root user (make sure group developers exists), enter:</p>
+<p>在解决这个问题过程中， 我找到几个方案。</p>
 
-<pre><code># grep developers /etc/group
-</code></pre>
+<h4>数据量真的庞大</h4>
 
-<p>Output:</p>
+<p>对数据做partition, 这样数据库更稳定。</p>
 
-<pre><code>developers:x:1124:
-</code></pre>
+<h4>有很庞大的表</h4>
 
-<p>If you do not see any output then you need to add group developers using groupadd command:</p>
+<p>如果数据不是很有价值，那么应该删除过期数据。
+如果数据很有价值，那么应该分表了。</p>
 
-<pre><code># groupadd developers
-</code></pre>
+<h3>Perconas是个好东西， 更省cpu</h3>
 
-<p>Next, add a user called vivek to group developers:</p>
+<p>以后有机会，要换这个数据库。</p>
 
-<pre><code># useradd -G developers vivek
-</code></pre>
+<h3>数据库恢复时，手动restore 了一些表，</h3>
 
-<p>Setup password for user vivek:</p>
+<p>发现一下行其实是有作用的，否则容易出现法语乱码:</p>
 
-<pre><code># passwd vivek
-</code></pre>
+<blockquote><p>&#8211; MySQL dump 10.11
+  &#8211;
+  &#8211; Host: localhost    Database: blabla</p>
 
-<p>Ensure that user added properly to group developers:</p>
+<hr />
 
-<pre><code># id vivek
-</code></pre>
+<p>  &#8211; Server version5.0.92-log</p>
 
-<p>Output:</p>
-
-<pre><code>uid=1122(vivek) gid=1125(vivek) groups=1125(vivek),1124(developers)
-</code></pre>
-
-<p>Please note that capital <code>G (-G)</code> option add user to a list of supplementary groups. Each group is separated from the next by a comma, with no intervening whitespace. For example, add user jerry to groups admins, ftp, www, and developers, enter:</p>
-
-<pre><code># useradd -G admins,ftp,www,developers jerry
-</code></pre>
-
-<h3>useradd example - Add a new user to primary group</h3>
-
-<p>To add a user tony to group developers use following command:</p>
-
-<pre><code># useradd -g developers tony
-# id tony
-</code></pre>
-
-<p>Sample outputs:</p>
-
-<pre><code>uid=1123(tony) gid=1124(developers) groups=1124(developers)
-</code></pre>
-
-<p>Please note that small -g option add user to initial login group (primary group). The group name must exist. A group number must refer to an already existing group.</p>
-
-<pre><code>usermod example - Add a existing user to existing group
-</code></pre>
-
-<p>Add existing user tony to ftp supplementary/secondary group with usermod command using -a option ~ i.e. add the user to the supplemental group(s). Use only with -G option :</p>
-
-<pre><code># usermod -a -G ftp tony
-</code></pre>
-
-<p>Change existing user tony primary group to www:</p>
-
-<pre><code># usermod -g www tony
-</code></pre>
+<p>/<em>!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT </em>/;
+  /<em>!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS </em>/;
+  /<em>!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION </em>/;
+  /<em>!40101 SET NAMES utf8 </em>/;
+  /<em>!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE </em>/;
+  /<em>!40103 SET TIME_ZONE=&#8217;+00:00&#8217; </em>/;
+  /<em>!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 </em>/;
+  /<em>!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS,
+  FOREIGN_KEY_CHECKS=0 </em>/;
+  /<em>!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE=&#8217;NO_AUTO_VALUE_ON_ZERO&#8217;
+  </em>/;
+  /<em>!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 </em>/;</p></blockquote>
 </div>
 
 
@@ -192,12 +163,12 @@
   
 
 
-<time datetime="2012-10-30T16:55:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
+<time datetime="2013-01-07T12:27:00+08:00" pubdate data-updated="true">Jan 7<span>th</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/linux/'>linux</a>
+    <a class='category' href='/blog/categories/system/'>system</a>
   
 </span>
 
@@ -206,7 +177,7 @@
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2013/01/07/%5B%3F%5D-dian-jing-yan-jiao-xun/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2013/01/07/%5B%3F%5D-dian-jing-yan-jiao-xun/" >Tweet</a>
   
   
   <div class="g-plusone" data-size="medium"></div>
@@ -219,10 +190,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/" title="Previous Post: MySQL 'Incorrect key file for table' error">&laquo; MySQL 'Incorrect key file for table' error</a>
+        <a class="basic-alignment left" href="/blog/2012/11/08/mysqlyou-hua-my-dot-ini-pei-zhi-shuo-ming/" title="Previous Post: mySQL优化 my.ini 配置说明">&laquo; mySQL优化 my.ini 配置说明</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/" title="Next Post: Integrate tire elasticsearch on bad server">Integrate tire elasticsearch on bad server &raquo;</a>
       
     </p>
   </footer>
@@ -314,8 +283,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/';
-        var disqus_url = 'http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/';
+        var disqus_identifier = 'http://dexterdeng.github.com/blog/2013/01/07/%5B%3F%5D-dian-jing-yan-jiao-xun/';
+        var disqus_url = 'http://dexterdeng.github.com/blog/2013/01/07/%5B%3F%5D-dian-jing-yan-jiao-xun/';
         var disqus_script = 'embed.js';
       
     (function () {

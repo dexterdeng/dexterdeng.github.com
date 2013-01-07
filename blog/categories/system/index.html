@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>add user to group - 脑波网</title>
+  <title>Category: system - 脑波网</title>
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="How can I add a user to a group under Linux operating system? You can use the useradd or usermod commands to add a user to a group. The useradd &hellip;">
+  <meta name="description" content="Category: system">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/">
+  <link rel="canonical" href="http://dexterdeng.github.comblog/categories/system/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -65,174 +65,36 @@
   <div id="main">
     <div id="content">
       <div>
-<article class="hentry" role="article">
+<article role="article">
   
   <header>
-    
-      <h1 class="entry-title">Add User to Group</h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-10-30T16:55:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
-        
-      </p>
+    <h1 class="entry-title">Category: System</h1>
     
   </header>
-
-
-<div class="entry-content"><p>How can I add a user to a group under Linux operating system?</p>
-
-<p>You can use the useradd or usermod commands to add a user to a group. The useradd command creates a new user or update default new user information. The usermod command modifies a user account i.e. it is useful to add user to existing group. There are two types of group. First is primary user group and other is secondary group. All user account related information is stored in <code>/etc/passwd</code>, <code>/etc/shadow</code> and <code>/etc/group</code> files to store user information.</p>
-
-<h3>useradd Example - Add A New User To Secondary Group</h3>
-
-<p>You need to the useradd command to add new users to existing group (or create a new group and then add user). If group does not exist, create it. The syntax is as follows:</p>
-
-<pre><code>useradd -G {group-name} username
-</code></pre>
-
-<p>In this example, create a new user called vivek and add it to group called developers. First login as a root user (make sure group developers exists), enter:</p>
-
-<pre><code># grep developers /etc/group
-</code></pre>
-
-<p>Output:</p>
-
-<pre><code>developers:x:1124:
-</code></pre>
-
-<p>If you do not see any output then you need to add group developers using groupadd command:</p>
-
-<pre><code># groupadd developers
-</code></pre>
-
-<p>Next, add a user called vivek to group developers:</p>
-
-<pre><code># useradd -G developers vivek
-</code></pre>
-
-<p>Setup password for user vivek:</p>
-
-<pre><code># passwd vivek
-</code></pre>
-
-<p>Ensure that user added properly to group developers:</p>
-
-<pre><code># id vivek
-</code></pre>
-
-<p>Output:</p>
-
-<pre><code>uid=1122(vivek) gid=1125(vivek) groups=1125(vivek),1124(developers)
-</code></pre>
-
-<p>Please note that capital <code>G (-G)</code> option add user to a list of supplementary groups. Each group is separated from the next by a comma, with no intervening whitespace. For example, add user jerry to groups admins, ftp, www, and developers, enter:</p>
-
-<pre><code># useradd -G admins,ftp,www,developers jerry
-</code></pre>
-
-<h3>useradd example - Add a new user to primary group</h3>
-
-<p>To add a user tony to group developers use following command:</p>
-
-<pre><code># useradd -g developers tony
-# id tony
-</code></pre>
-
-<p>Sample outputs:</p>
-
-<pre><code>uid=1123(tony) gid=1124(developers) groups=1124(developers)
-</code></pre>
-
-<p>Please note that small -g option add user to initial login group (primary group). The group name must exist. A group number must refer to an already existing group.</p>
-
-<pre><code>usermod example - Add a existing user to existing group
-</code></pre>
-
-<p>Add existing user tony to ftp supplementary/secondary group with usermod command using -a option ~ i.e. add the user to the supplemental group(s). Use only with -G option :</p>
-
-<pre><code># usermod -a -G ftp tony
-</code></pre>
-
-<p>Change existing user tony primary group to www:</p>
-
-<pre><code># usermod -g www tony
-</code></pre>
-</div>
-
-
-  <footer>
-    <p class="meta">
-      
   
-
-<span class="byline author vcard">Posted by <span class="fn">Dexter Deng</span></span>
-
-      
-
-
-
-
-
+  <div id="blog-archives" class="category">
 
 
 
   
+  <h2>2013</h2>
+
+<article>
+  
+<h1><a href="/blog/2013/01/07/%5B%3F%5D-dian-jing-yan-jiao-xun/">一点经验教训</a></h1>
+<time datetime="2013-01-07T12:27:00+08:00" pubdate><span class='month'>Jan</span> <span class='day'>07</span> <span class='year'>2013</span></time>
+
+<footer>
+  <span class="categories">posted in <a class='category' href='/blog/categories/system/'>system</a></span>
+</footer>
 
 
-<time datetime="2012-10-30T16:55:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
-      
-
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/linux/'>linux</a>
-  
-</span>
-
-
-    </p>
-    
-      <div class="sharing">
-  
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/" >Tweet</a>
-  
-  
-  <div class="g-plusone" data-size="medium"></div>
-  
-  
-    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
-  
-</div>
-
-    
-    <p class="meta">
-      
-        <a class="basic-alignment left" href="/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/" title="Previous Post: MySQL 'Incorrect key file for table' error">&laquo; MySQL 'Incorrect key file for table' error</a>
-      
-      
-        <a class="basic-alignment right" href="/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/" title="Next Post: Integrate tire elasticsearch on bad server">Integrate tire elasticsearch on bad server &raquo;</a>
-      
-    </p>
-  </footer>
 </article>
 
-  <section>
-    <h1>Comments</h1>
-    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 </div>
-  </section>
+
+  
+</article>
 
 </div>
 
@@ -313,10 +175,7 @@
       var disqus_shortname = 'dexterdengsblog';
       
         
-        // var disqus_developer = 1;
-        var disqus_identifier = 'http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/';
-        var disqus_url = 'http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/';
-        var disqus_script = 'embed.js';
+        var disqus_script = 'count.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

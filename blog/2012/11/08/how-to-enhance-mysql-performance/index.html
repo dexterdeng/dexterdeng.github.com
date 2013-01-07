@@ -1,0 +1,419 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>How to enhance mysql performance - 脑波网</title>
+  <meta name="author" content="Dexter Deng">
+
+  
+  <meta name="description" content="1. use show processlist show processlist it can check the connections, and find the slow sql. You can add index to some columns if needed 2. check / &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://dexterdeng.github.com/blog/2012/11/08/how-to-enhance-mysql-performance/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="脑波网" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">脑波网</a></h1>
+  
+    <h2>---- 记录我的足迹, 记录我的脑波, 我是Dexter Deng.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss email">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+    <li><a href="dexterdeng@gmail.com" rel="subscribe-email" title="subscribe via email">Email</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:dexterdeng.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">文章</a></li>
+  <li><a href="/blog/archives">归档</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">How to Enhance Mysql Performance</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-08T11:36:00+08:00" pubdate data-updated="true">Nov 8<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h3>1. use <code>show processlist</code></h3>
+
+<pre><code>show processlist
+</code></pre>
+
+<p>it can  check the connections,  and find the slow sql.  You can add index to some columns if needed</p>
+
+<h3>2. check <code>/var/lib/mysql/slow.log</code></h3>
+
+<pre><code>cat /var/lib/mysql/slow.log
+</code></pre>
+
+<p>it can  check the connections,  and find the slow sql.  You can add index to some columns if needed</p>
+
+<p>e.g.</p>
+
+<pre><code>SELECT DISTINCT(events.id), events.* FROM `events`   left join  event_users on event_users.event_id = events.id  WHERE ((events.user_id = 444 or (event_users.user_id = 444 and event_users.status != 0)) and (events.end_at &lt; '2012-11-07'  or (events.end_at  is null and events.start_at  &lt; '2012-11-07' )))  LIMIT 0, 20;
+</code></pre>
+
+<p>it took 5 s for the first running.</p>
+
+<pre><code>show index from events
+</code></pre>
+
+<p>I got this:</p>
+
+<pre><code>    +--------+------------+---------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
+| Table  | Non_unique | Key_name                  | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment |
++--------+------------+---------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
+| events |          0 | PRIMARY                   |            1 | id          | A         |        2180 |     NULL | NULL   |      | BTREE      |         | 
+| events |          1 | index_events_on_permalink |            1 | permalink   | A         |        2180 |     NULL | NULL   | YES  | BTREE      |         | 
++--------+------------+---------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
+2 rows in set (0.00 sec)
+
+
+mysql&gt; show index from event_users;
++-------------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
+| Table       | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment |
++-------------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
+| event_users |          0 | PRIMARY  |            1 | id          | A         |        7671 |     NULL | NULL   |      | BTREE      |         | 
++-------------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
+</code></pre>
+
+<p>I decide to add index to event_users&#8217;s event_id, user_id, events.user_id</p>
+
+<pre><code>ALTER TABLE `events` ADD INDEX ( `user_id` )
+ALTER TABLE `event_users` ADD INDEX ( `user_id` )
+ALTER TABLE `event_users` ADD INDEX ( `event_id` )
+</code></pre>
+
+<h3>2. use <code>mysqltuner.pl</code>###</h3>
+
+<p><code>mysqltuner.pl</code> is a perl script. it can connect the mysql and check
+issues, and recommend you how to enhance it.</p>
+
+<pre><code>$ perl mysqltuner.pl 
+
+ &gt;&gt;  MySQLTuner 1.2.0 - Major Hayden &lt;major@mhtx.net&gt;
+ &gt;&gt;  Bug reports, feature requests, and downloads at http://mysqltuner.com/
+ &gt;&gt;  Run with '--help' for additional options and output filtering
+Please enter your MySQL administrative login: root
+Please enter your MySQL administrative password: 
+
+-------- General Statistics --------------------------------------------------
+[--] Skipped version check for MySQLTuner script
+[OK] Currently running supported MySQL version 5.0.92-log
+[OK] Operating on 64-bit architecture
+
+-------- Storage Engine Statistics -------------------------------------------
+[--] Status: -Archive -BDB -Federated +InnoDB -ISAM -NDBCluster 
+[--] Data in MyISAM tables: 105M (Tables: 55)
+[--] Data in InnoDB tables: 18G (Tables: 938)
+[!!] Total fragmented tables: 6
+
+-------- Security Recommendations  -------------------------------------------
+[OK] All database users have passwords assigned
+
+-------- Performance Metrics -------------------------------------------------
+[--] Up for: 4d 20h 36m 22s (38M q [91.609 qps], 65K conn, TX: 78B, RX: 5B)
+[--] Reads / Writes: 88% / 12%
+[--] Total buffers: 3.3G global + 42.2M per thread (100 max threads)
+[OK] Maximum possible memory usage: 7.5G (31% of installed RAM)
+[OK] Slow queries: 0% (77/38M)
+[OK] Highest usage of available connections: 43% (43/100)
+[OK] Key buffer size / total MyISAM indexes: 140.0M/143.8M
+[OK] Key buffer hit rate: 99.9% (218M cached / 122K reads)
+[OK] Query cache efficiency: 36.7% (12M cached / 32M selects)
+[!!] Query cache prunes per day: 2340785
+[OK] Sorts requiring temporary tables: 0% (5K temp sorts / 2M sorts)
+[!!] Joins performed without indexes: 109640
+[!!] Temporary tables created on disk: 29% (700K on disk / 2M total)
+[OK] Thread cache hit rate: 99% (43 created / 65K connections)
+[!!] Table cache hit rate: 0% (100 open / 27K opened)
+[OK] Open file limit used: 0% (15/20K)
+[OK] Table locks acquired immediately: 99% (30M immediate / 30M locks)
+[!!] InnoDB data size / buffer pool: 18.5G/3.0G
+
+-------- Recommendations -----------------------------------------------------
+General recommendations:
+    Run OPTIMIZE TABLE to defragment tables for better performance
+    Adjust your join queries to always utilize indexes
+    When making adjustments, make tmp_table_size/max_heap_table_size equal
+    Reduce your SELECT DISTINCT queries without LIMIT clauses
+    Increase table_cache gradually to avoid file descriptor limits
+Variables to adjust:
+    query_cache_size (&gt; 100M)
+    join_buffer_size (&gt; 32.0M, or always use indexes with joins)
+    tmp_table_size (&gt; 100M)
+    max_heap_table_size (&gt; 100M)
+    table_cache (&gt; 100)
+    innodb_buffer_pool_size (&gt;= 18G)
+</code></pre>
+
+<h4>1. <code>Run OPTIMIZE TABLE to defragment tables for better performance</code></h4>
+
+<p>Run this command:</p>
+
+<pre><code>mysqlcheck -u root --auto-repair --optimize --all-databases
+</code></pre>
+
+<p>You can usually fix the table by issuing:</p>
+
+<pre><code>mysqlcheck -A -r -p
+</code></pre>
+
+<p>Restart MYSQL Server:</p>
+
+<pre><code>/etc/init.d/mysql restart
+</code></pre>
+
+<p>use https://tools.percona.com/wizard/ to generate a conf file.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Dexter Deng</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-08T11:36:00+08:00" pubdate data-updated="true">Nov 8<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/mysql/'>mysql</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2012/11/08/how-to-enhance-mysql-performance/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2012/11/08/how-to-enhance-mysql-performance/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/" title="Previous Post: How to integrate mmseg with elasticsearch">&laquo; How to integrate mmseg with elasticsearch</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2012/11/08/mysqlyou-hua-my-dot-ini-pei-zhi-shuo-ming/" title="Next Post: mySQL优化 my.ini 配置说明">mySQL优化 my.ini 配置说明 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/01/07/%5B%3F%5D-dian-jing-yan-jiao-xun/">一点经验教训</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/11/08/mysqlyou-hua-my-dot-ini-pei-zhi-shuo-ming/">mySQL优化 my.ini 配置说明</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/11/08/how-to-enhance-mysql-performance/">How to enhance mysql performance</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/">How to integrate mmseg with elasticsearch</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/">delete blank lines and replace with enter</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("dexterdeng", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/dexterdeng" class="twitter-follow-button" data-show-count="false">Follow @dexterdeng</a>
+  
+</section>
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/dexterdeng?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Dexter Deng -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'dexterdengsblog';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dexterdeng.github.com/blog/2012/11/08/how-to-enhance-mysql-performance/';
+        var disqus_url = 'http://dexterdeng.github.com/blog/2012/11/08/how-to-enhance-mysql-performance/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
