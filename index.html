@@ -9,7 +9,8 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="install RVM 安装系统需要的包 yum install build-essential openssl curl libcurl3-dev libreadline6 libreadline6-dev git zlib1g zlib1g-dev libssl-dev libyaml-dev &hellip;">
+  <meta name="description" content="掌握邮件发送技术刻不容缓， 写此篇博客以作备忘。 postfix 系统安装 install mc yum install mc
+cd /usr/share/mc How should it be [root@mail.blanee.net /etc/postfix]# ps aux | grep &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +67,586 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/13/about-mail-server/">About Mail Server</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-13T01:42:00+08:00" pubdate data-updated="true">Jan 13<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>掌握邮件发送技术刻不容缓， 写此篇博客以作备忘。</p>
+
+<h3>postfix 系统安装</h3>
+
+<h4>install mc</h4>
+
+<pre><code>yum install mc
+cd /usr/share/mc
+</code></pre>
+
+<h4>How should it be</h4>
+
+<pre><code>[root@mail.blanee.net /etc/postfix]# ps aux | grep "postfix"
+postfix    744  0.0  0.0  66932  2976 ?        S    12:18   0:00 smtp -t unix -u
+postfix   2889  0.0  0.0  67136  3384 ?        D    11:56   0:00 cleanup -z -t unix -u
+root      4550  0.0  0.0  66636  2100 ?        Ss    2012   2:13 /usr/libexec/postfix/master
+postfix   4563  0.0  0.0  66976  2432 ?        S     2012   4:16 qmgr -l -t fifo -u
+postfix   5309  0.0  0.0  66860  3048 ?        S    12:09   0:00 trivial-rewrite -n rewrite -t unix -u
+postfix   6277  0.0  0.0  66764  2804 ?        S    11:40   0:00 bounce -z -t unix -u
+postfix   6361  0.0  0.0  66932  2936 ?        S    12:02   0:00 smtp -n relay -t unix -u -o smtp_fallback_relay=
+postfix   7419  0.0  0.0  66724  2756 ?        S    11:59   0:00 pickup -l -t fifo -u
+root      7675  0.0  0.0  61188   784 pts/2    S+   12:19   0:00 grep postfix
+postfix   7873  0.0  0.0  66764  2800 ?        S    11:39   0:00 bounce -z -t unix -u
+postfix  11515  0.0  0.0  67136  3388 ?        S    12:11   0:00 cleanup -z -t unix -u
+postfix  17586  0.0  0.0  66772  2800 ?        S    11:14   0:00 pipe -n bproc -t unix flags=Rq user=bproc argv=/opt/bounceproc/process.pl -f ${sender} -- ${recipient}
+postfix  18082  0.0  0.0  67664  2804 ?        S    12:06   0:00 pipe -n bproc -t unix flags=Rq user=bproc argv=/opt/bounceproc/process.pl -f ${sender} -- ${recipient}
+postfix  26125  0.0  0.0  67300  3516 ?        S    12:09   0:00 smtpd -n smtp -t inet -u -o stress= -s 2
+</code></pre>
+
+<h4>ready</h4>
+
+<p>centos5</p>
+
+<pre><code>rpm -ihv http://dl.fedoraproject.org/pub/epel/5/x86_64/epel-release-5-4.noarch.rpm # or higher
+rpm -ihv http://centos.alt.ru/repository/centos/5/x86_64/centalt-release-5-3.noarch.rpm
+</code></pre>
+
+<p>centos6</p>
+
+<pre><code>rpm -ihv http://centos.alt.ru/repository/centos/6/x86_64/centalt-release-6-1.noarch.rpm
+
+
+
+yum update
+yum install postfix
+
+
+netstat   -tlnp
+rpm -e sendmail
+yum remove sendmail
+
+tail -f /var/log/maillog
+</code></pre>
+
+<h3>integrate opendkim</h3>
+
+<h4>opendkim</h4>
+
+<p>Go to http://www.opendkim.org/ and hit the Download link to download the software. Save it to <code>/usr/local/src</code> on your server. For this HowTo, I used OpenDKIM version 2.4.2, which was released on August 6, 2011.</p>
+
+<p>You’ll also need to install the <code>OpenSSL</code> and <code>Sendmail development</code> packages, because they contain some secret herbs and spices (otherwise known as “libraries”) you need to get OpenDKIM working. Do:</p>
+
+<pre><code>yum install sendmail-devel openssl-devel
+</code></pre>
+
+<p>Extract, configure, compile, and install OpenDKIM with:</p>
+
+<pre><code>tar zxvf opendkim-2.4.2.tar.gz
+cd opendkim-2.4.2
+./configure --sysconfdir=/etc --prefix=/usr/local --localstatedir=/var
+make
+make install
+</code></pre>
+
+<p>Note that the <code>./configure</code> command includes a few very important flags, which will be passed into the startup script that’s created when the configure command runs. The first tells the system where OpenDKIM’s conf file will be located, the second sets the preferred prefix for some other important file locations, and the final one controls the directory where the PID file for OpenDKIM will be stored. If none of this makes any sense to you, that’s ok – just be sure to use those flags when you run configure, since they are the settings used throughout this tutorial.</p>
+
+<p>Also, it’s important to note that the make install command must be performed as root (or using sudo), since it needs to install files files in the <code>/usr/local/bin</code> directory.</p>
+
+<h4>Create a new user and home directory</h4>
+
+<p>Add a new user for DKIM called <code>opendkim</code> with the following options:</p>
+
+<pre><code>useradd -r -g opendkim -G mail -s /sbin/nologin -d /var/run/opendkim -c "OpenDKIM" opendkim
+</code></pre>
+
+<p>This command will:</p>
+
+<ul>
+<li>create a new system account (-r) and group (-g) called opendkim,</li>
+<li>create a home directory (-d) for the new user in /var/run/opendkim,</li>
+<li>also add the opendkim to the mail group (-G),</li>
+<li>assign no shell access to this user (-s), and</li>
+<li>set the account comment to “OpenDKIM (-c).</li>
+<li><p>While the proper permissions for this account’s home directory should be set when the user is created, to avoid any permissions issues in further steps, it doesn’t hurt to manually set them with:</p>
+
+<p>chown opendkim:opendkim /var/run/opendkim</p></li>
+</ul>
+
+
+<p>then:</p>
+
+<pre><code>chmod 700 /var/run/opendkim
+</code></pre>
+
+<h4>Create working directories</h4>
+
+<p>Make some new directories for OpenDKIM and give them the proper ownership and permissions with:</p>
+
+<pre><code>mkdir -p /etc/opendkim/keys
+chown -R opendkim:opendkim /etc/opendkim
+chmod -R go-wrx /etc/opendkim/keys
+</code></pre>
+
+<h4>Copy the startup script to /etc/init.d/</h4>
+
+<p>Starting with version 2.3.0, OpenDKIM’s source package includes a contrib directory that contains a custom init script (written by yours truly) for use with all RedHat-compatible systems, including Fedora and CentOS. You can copy it to your /etc/init.d/ directory to make starting, stopping, restarting, and reloading OpenDKIM easy. Just do:</p>
+
+<pre><code>cp /usr/local/src/opendkim-2.4.2/contrib/init/redhat/opendkim /etc/init.d/
+</code></pre>
+
+<p>Now set the correct permissions for the init script with:</p>
+
+<pre><code>chmod 755 /etc/init.d/opendkim
+</code></pre>
+
+<h4>Generate keys for signing</h4>
+
+<p>Now you’re getting to the good part. You need to generate a <code>private</code> and a <code>public</code> key for each of the domains for which you wish to sign mail. The private key is stored away from prying eyes on your server, while the public key gets published in your domain’s DNS records so that receiving mail servers can verify your DKIM-signed mail. If you’re hard-core, you can build the keys manually. Or, you can use the fancy script included with <code>OpenDKIM</code> to do it for you. I’ve manually generated enough keys in my life and have nothing to prove, so I use the script.</p>
+
+<p>Before running this script, decide now what the name of your selector is going to be. A selector is a unique keyword that is associated with both keys (public and private), included in all the signatures, and published in your DNS records. For simplicity, I use the word default as my default selector. Not very creative, but it’s effective. Feel free to choose something different, but if you do, you’ll need to use it consistently throughout your setup. Also, while this should go without saying, you should use your mail domain instead of example.com throughout the following steps.</p>
+
+<p>Create your keys with:</p>
+
+<pre><code>mkdir /etc/opendkim/keys/tiaoboo.com
+/usr/local/sbin/opendkim-genkey -D /etc/opendkim/keys/tiaoboo.com/ -d tiaoboo.com -s default
+chown -R opendkim:opendkim /etc/opendkim/keys/tiaoboo.com
+mv /etc/opendkim/keys/tiaoboo.com/default.private /etc/opendkim/keys/tiaoboo.com/default
+</code></pre>
+
+<p>You can do a man <code>opendkim-genkey</code> if you’re interested in what additional options are available when creating your keys. In this example, I used the <code>-D</code> (directory) option, the <code>-d</code> (domain) option, and the <code>-s</code> (selector) options. That’s all you need to get this going.</p>
+
+<h4>Edit configuration files</h4>
+
+<p>You’re getting really close now. You need to create or edit four files:</p>
+
+<ul>
+<li><code>/etc/opendkim.conf</code> – OpenDKIM’s main configuration file</li>
+<li><code>/etc/opendkim/KeyTable</code> – a list of keys available for signing</li>
+<li><code>/etc/opendkim/SigningTable</code> - a list of domains and accounts allowed to sign</li>
+<li><code>/etc/opendkim/TrustedHosts</code> – a list of servers to “trust” when signing or verifying</li>
+</ul>
+
+
+<p>Use your favorite text editor to create an <code>/etc/opendkim.conf</code> file that looks like this:</p>
+
+<pre><code>##
+## opendkim.conf -- configuration file for OpenDKIM filter
+##
+
+AutoRestart             Yes
+AutoRestartRate         10/1h
+Canonicalization        relaxed/simple
+ExternalIgnoreList      refile:/etc/opendkim/TrustedHosts
+InternalHosts           refile:/etc/opendkim/TrustedHosts
+KeyTable                refile:/etc/opendkim/KeyTable
+LogWhy                  Yes
+Mode                    sv
+PidFile                 /var/run/opendkim/opendkim.pid
+SignatureAlgorithm      rsa-sha256
+SigningTable            refile:/etc/opendkim/SigningTable
+Socket                  inet:8891@localhost
+Syslog                  Yes
+SyslogSuccess           Yes
+TemporaryDirectory      /var/tmp
+UMask                   022
+UserID                  opendkim:opendkim
+</code></pre>
+
+<p>You can do man <code>opendkim.conf</code> for more information on each of the options.</p>
+
+<p>Next, you’ll need to create the three text files that you just mentioned in your config file. First, using your favorite text editor, create an <code>/etc/opendkim/KeyTable</code> file that looks like this:</p>
+
+<pre><code>default._domainkey.tiaoboo.com example.com:default:/etc/opendkim/keys/tiaoboo.com/default
+</code></pre>
+
+<p>The <code>KeyTable</code> file tells <code>OpenDKIM</code> where to find your keys. Each entry in the  <code>KeyTable</code> file is a single line for each key location</p>
+
+<pre><code>(for example, all of the text in the above example should be on a single line in your file). If you’re going to use multiple keys (to sign mail for virtual domains with different keys, for example), you’ll need to create a separate line in the KeyTable file for each domain.
+</code></pre>
+
+<p>Next, create an <code>/etc/opendkim/SigningTable</code> file that looks like this:</p>
+
+<pre><code>*@tiaoboo.com default._domainkey.tiaoboo.com
+</code></pre>
+
+<p>The <code>SigningTable</code> file tells <code>OpenDKIM</code> how to use your keys, as in which senders should use which selectors for their signatures. In the above example, I’m saying that everyone (*) sending mail from the server “tiaoboo.com” should use the selector named “default.” It’s important to note that the <code>*</code> wildcard symbol will only work if the SigningTable option uses the refile: prefix before the filename (see the <code>opendkim.conf</code> documentation for more details).</p>
+
+<p>Now create an <code>/etc/opendkim/TrustedHosts</code> file that looks like this:</p>
+
+<pre><code>127.0.0.1/8
+tiaoboo.com
+</code></pre>
+
+<p>The TrustedHosts file tells <code>OpenDKIM</code> who to let use your keys. Because it’s referenced by the ExternalIgnoreList directive in your conf file, OpenDKIM will ignore this list of hosts when verifying incoming mail. And, because it’s also referenced by the InternalHosts directive, this same list of hosts will be considered “internal,” and OpenDKIM will sign their outgoing mail.</p>
+
+<p><code>IMPORTANT:</code> Make sure you list the IP address for localhost (<code>127.0.0.1</code>) in the TrustedHosts file or OpenDKIM won’t sign mail sent from this server. If you have multiple servers on the same network that relay mail through this server and you want to sign their mail as well, they must be listed in the TrustedHosts file. Put each entry on its own line. An entry can be a hostname, domain name (e.g. “toaoboo.com”), IP address, an IPv6 address (including an IPv4 mapped address), or a CIDR-style IP specification (e.g. “192.168.1.0/24″).</p>
+
+<p>It should also go without saying (but I’ll say it anyway) that if you’re planning to sign outgoing mail for remote hosts, your Postfix should have been previously configured to allow relaying for those hosts, as “explained” here… although, when referring to Postfix’s programmer-centric documentation, I generally use the term “explain” very loosely.</p>
+
+<h4>Edit your Postfix configuration</h4>
+
+<p>Now you’re ready to add the following lines to your <code>Postfix main.cf</code> file, which will make Postfix aware of <code>OpenDKIM</code> and allow it to sign and verify mail:</p>
+
+<pre><code>smtpd_milters           = inet:127.0.0.1:8891
+non_smtpd_milters       = $smtpd_milters
+milter_default_action   = accept
+</code></pre>
+
+<p>If you’re running a <code>version of Postfix prior to 2.6</code>, you may also need to add:</p>
+
+<pre><code>milter_protocol   = 2
+</code></pre>
+
+<p>See http://www.postfix.org/MILTER_README.html#version for more info.</p>
+
+<h4>Start OpenDKIM and restart Postfix</h4>
+
+<p>It’s time to fire things up! Assuming you’re using bash, do:</p>
+
+<pre><code>hash -r
+</code></pre>
+
+<p>to rehash your shell so you can find the init script.</p>
+
+<p>Now start OpenDKIM with:</p>
+
+<pre><code>service opendkim start
+</code></pre>
+
+<p>You should get a message that says:</p>
+
+<pre><code>Starting OpenDKIM Milter:     [  OK  ]
+</code></pre>
+
+<p>However, if you get an error message such as:</p>
+
+<pre><code>Starting OpenDKIM Milter: opendkim: /etc/opendkim.conf: configuration error at line 6: unrecognized parameter
+</code></pre>
+
+<p>don’t freak out. You probably just mistyped something in one of the config files. Go to the line number of the file listed, and check your work against the example(s) in this HowTo. Then try starting up OpenDKIM again.</p>
+
+<p>Once it starts, refresh Postfix with:</p>
+
+<pre><code>postfix reload
+</code></pre>
+
+<p>If everything looks good, I recommend running <code>chkconfig on OpenDKIM</code> to make sure it starts when you boot your server:</p>
+
+<pre><code>chkconfig --level 2345 opendkim on
+</code></pre>
+
+<p>If things didn’t go right, try some of these startup troubleshooting tips before moving on.</p>
+
+<h4>Startup troubleshooting tips</h4>
+
+<ul>
+<li><p>Tip 1: The best advice I can give when troubleshooting any mail issues (including OpenDKIM) is to start a second shell session in another window and do:</p>
+
+<p>tail -f /var/log/maillog</p></li>
+</ul>
+
+
+<p>while you’re starting, stopping, and/or restarting OpenDKIM and Postfix. This allows you to see more details about any errors in your configuration.</p>
+
+<ul>
+<li>Tip 2: To get the most verbose information from OpenDKIM, make sure the LogWhy option in your /etc/opendkim.conf file is uncommented and set to Yes. If your outgoing mail isn’t getting signed and you want to know why, this should tell you.</li>
+</ul>
+
+
+<h4>The Most Important Step: Adding DNS Records</h4>
+
+<p>Now that your mail server is signing outgoing mail and verifying incoming mail, you’ll need to put some information in your DNS records to tell other mail servers how your keys are set up, and provide the public key for them to check that your mail is properly signed. Do:</p>
+
+<pre><code>cat /etc/opendkim/keys/tiaoboo.com/default.txt
+</code></pre>
+
+<p>The output should look something like this:</p>
+
+<pre><code>default._domainkey IN TXT "v=DKIM1; g=*; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDHY7Zl+n3SUldTYRUEU1BErHkKN0Ya52gazp1R7FA7vN5RddPxW/sO9JVRLiWg6iAE4hxBp42YKfxOwEnxPADbBuiELKZ2ddxo2aDFAb9U/lp47k45u5i2T1AlEBeurUbdKh7Nypq4lLMXC2FHhezK33BuYR+3L7jxVj7FATylhwIDAQAB" ; ----- DKIM default for tiaoboo.com
+</code></pre>
+
+<p>If you manage your own DNS or have full access to your domain’s zone file, you’ll need to paste the entire contents of the default.txt file at the bottom of your domain’s zone file. If you’re using a web interface to manage your zone file, be careful that the long lines of the public key don’t wrap and create line-feed characters (or fix them if they do). Otherwise, your public key won’t work.</p>
+
+<p>If you’re using GoDaddy’s Total DNS, the TXT Name would  default._domainkey and the TXT Value would be everything inside the quotes (starting with v=). You can ignore the semi-colon and comments at the end.</p>
+
+<p>If you’re using some other third-party DNS provider, follow their instructions for adding a new TXT Record.</p>
+
+<p>You should also add another TXT Record to your zone file that reads:</p>
+
+<pre><code>_adsp._domainkey.tiaoboo.com    IN    TXT    "dkim=unknown" 3600
+_domainkey.tiaoboo.com          IN    TXT    "o=~;*         3600
+_spf.tiaoboo.com                IN    TXT    "ip4:66.135.35.84"  600
+default._domainkey.tiaoboo.com  IN    TXT    "v=DKIM1; k=rsa;
+</code></pre>
+
+<p>p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFkbFiloMnbWBkt/Q9dVTLAqcr536yJj7jmdyZVoMNJXHZrio78OFnGxCGjbJm3iPZ07YXhjhP0YIYi4SdpQD5w8JIB7vrArWLwwJnyL3IsiYrhoiaMFWJRpjnhSf16l/IcoO3+s8HRJOzQrw5HJsNM9KbnOxodYTew+lC4OqZgQIDAQAB&#8221;  1800</p>
+
+<p>This record publishes your Author Domain Signing Practices. “Unknown” is <code>the least strict setting</code>, and the best place to start. You can learn more and tinker with other options later, but most people just use “Unknown” for now, since ADSP is relatively new (as of the writing of this post).</p>
+
+<p>And, as long as you’re messing with your domain’s zone file, now might be a good time to ensure that you already have a valid SPF Record in place. Having both DKIM and SPF in place will increase your chances of having your outgoing mail successfully delivered.</p>
+
+<h4>Testing Things Out</h4>
+
+<p>As I mentioned in my troubleshooting tips, the best way to see that everything is working on the server side is to keep an eye on your <code>/var/log/maillog</code> file. Do a:</p>
+
+<pre><code>tail -f /var/log/maillog
+</code></pre>
+
+<p>When OpenDKIM starts (or restarts), you should see lines like:</p>
+
+<pre><code>opendkim[4397]: OpenDKIM Filter: mi_stop=1
+opendkim[4397]: OpenDKIM Filter v2.4.2 terminating with status 0, errno = 0
+opendkim[27444]: OpenDKIM Filter v2.4.2 starting (args: -x /etc/opendkim.conf)
+</code></pre>
+
+<p>When you send a mail that gets successfully signed, you should see:</p>
+
+<pre><code>opendkim[22254]: 53D0314803B: DKIM-Signature header added
+</code></pre>
+
+<h4>Further reading</h4>
+
+<p>I have to admit that there wasn’t a whole lot of publicly available information on getting <code>OpenDKIM</code> working with Postfix. Hopefully, this HowTo will make it easier for you than it was for me.</p>
+
+<ul>
+<li>DKIM.org – the official site for DomainKeys Identified Mail</li>
+<li>OpenDKIM Project Site – the program I used to get DKIM working</li>
+<li>Sendmail DKIM – a detailed article from Eland Systems about DKIM. They use the dkim-milter package, upon which OpenDKIM is based. I much prefer the newer OpenDKIM, but this article explains DKIM very well and has some good tips.</li>
+<li>Mail-DKIM and DKIM-proxy – my first experiments with DKIM were with these tools. I never got it working quite right, but there’s lots of good info there.</li>
+<li>OpenSPF.org – not technically related to DKIM, but it’s another spam-fighting technique that you should be using if you’re sending email</li>
+</ul>
+
+
+<p>Good luck! Pease post in the comments with your successes, questions, or suggestions.</p>
+
+<h3>Upgrading OpenDKIM</h3>
+
+<p>If you’ve followed this guide to compile and install <code>OpenDKIM</code>, and would like to upgrade to a newer version, simply download the updated version (using the download link above), then repeat these steps:</p>
+
+<pre><code>tar zxvf opendkim-2.4.2.tar.gz
+cd opendkim-2.4.2
+./configure --sysconfdir=/etc --prefix=/usr/local --localstatedir=/var
+make
+make install
+</code></pre>
+
+<p>This will upgrade your OpenDKIM and keep your existing configuration intact. Remember to restart OpenDKIM after your upgrade with:</p>
+
+<pre><code>service opendkim restart
+</code></pre>
+
+<p>Do:</p>
+
+<pre><code>tail -f /var/log/maillog
+</code></pre>
+
+<p>to verify that the newer version started up with no problems.</p>
+
+<h3>Notice</h3>
+
+<ul>
+<li><p>dk-milt 这个进程，启动2个的话，服务器就会瘫痪。 切记</p>
+
+<p>dk-milt  10630     1  0 00:44 ?        00:00:00 /usr/sbin/dk-filter -u dk-milt -p inet:10034@127.0.0.1 -d /etc/mail/domainkeys/domains -s /etc/mail/domainkeys/keys -S mail -b sv -c simple -C bad=r,dns=t,int=t,no=a,miss=r -A -k -l -P /var/run/dk-filter0.pid
+nginx    18084 17997  0 00:52 pts/3    00:00:00 grep dk
+opendkim 29307     1  0 00:45 ?        00:00:00 /usr/sbin/opendkim -x /etc/opendkim.conf -P /var/run/opendkim/opendkim.pid
+opendkim 29309 29307  0 00:45 ?        00:00:00 /usr/sbin/opendkim -x /etc/opendkim.conf -P /var/run/opendkim/opendkim.pid</p></li>
+<li><p><code>dkim-filter</code> 是<code>opendkim</code> 的前身，所以， 不需要同时装<code>dkim-filter</code> 和
+<code>opendkim</code></p>
+
+<p>DomainKeysis 一种过时的技术（更好的探测技术术语，是一个“历史性协议”）。虽然有些邮件程序可能仍然用DomainKeys签上自己的邮件，该技术已被遗弃，不再被开发。基本上，你不再需要它了。
+DKIM(which stands forDomainKeys Internet Mail) 是新标准，  推荐的方法。</p></li>
+</ul>
+
+
+<p>DomainKeys 已经过期， 如果你真想使用它， the only way you should even consider doing do is to first set up DKIM using OpenDKIM (by following the steps in my earlier tutorial), and then set up DomainKeys by re-using and relying on as much of of your DKIM installation as possible.</p>
+
+<p>OpenDKIM 是一个开源C语言库，
+由社区努力开发和维护的用来生产 DKIM-aware 应用程序，提供DKIM服务的开源C语言库。</p>
+
+<p>OpenDKIM 是基于开源项目 dkim-milter v2.8.3(最近一次更新为2009-06-03) 的代码基础上开发的， 由 Sendmail, Inc. 开发和维护
+OpenDKIM版本是最新的，有人维护的。比之于老掉牙的DomainKeys，很长时间没有更新的 DKIM-Milter 更有活力，似乎也更容易安装和维护</p>
+
+<h3>DK</h3>
+
+<p>在openDKIM 安装后， 就可以着手安装domainKeys了。</p>
+
+<pre><code>rpm -ivh dk-milter-1.0.2-1.x86_64.rpm 
+</code></pre>
+
+<h4>Modify the default dk-milter configuration</h4>
+
+<p>The RPM you installed copied the necessary binaries and default configuration files for dk-milter. However, we won’t be using the default settings. Because you already chose a selector, created keys, and set up your DNS records when you set up OpenDKIM, we can re-use the same selector, keys, and DNS records in dk-milter with a few simple modifications.</p>
+
+<h4>Remember your selector</h4>
+
+<p>When you configured OpenDKIM, you already decided the name of your selector. Your selector is a unique keyword that is associated with both keys (public and private), included in all the signatures, and is published in your DNS records. For simplicity, I chose the word <code>default</code> as my default selector in the OpenDKIM tutorial, and will do the same here. If you chose something different, remember to use it consistently in this tutorial, too. It just needs to be the same as the one you used with OpenDKIM.</p>
+
+<p>Also, while this should go without saying, you should also use your mail domain instead of <code>tiaoboo.com</code> throughout the following steps.</p>
+
+<h4>Edit the dk-milter configuration file</h4>
+
+<p>Use your favorite text editor to open the default dk-milter configuration file, which is located at <code>/etc/sysconfig/dk-milter</code>. By default, all the values in that file are commented out, meaning that unless you change them now, dk-milter will use the settings from its init script when it starts up.</p>
+
+<p>Uncomment and edit the necessary lines in the file so that it appears as follows:</p>
+
+<pre><code># Default values
+#
+USER="opendkim"
+PORT="inet:10035@localhost"
+SIGNING_DOMAIN="tiaoboo.com"
+SELECTOR_NAME="default"
+KEYFILE="/etc/opendkim/keys/${SIGNING_DOMAIN}/${SELECTOR_NAME}"
+SIGNER=yes
+VERIFIER=no
+CANON=simple
+REJECTION="bad=r,dns=t,int=t,no=a,miss=r"
+EXTRA_ARGS="-h -l -D -i /etc/opendkim/TrustedHosts"
+SYSCONFIG="/etc/sysconfig/dk-milter"
+MILTER_GROUP="opendkim"
+
+# User configuration
+#
+#PORT0="inet:10034@localhost"
+#SIGNER0=no
+#PORT1="inet:10035@localhost"
+#VERIFIER1=no
+#...
+</code></pre>
+
+<p>Notice that we’re referencing the opendkim user and group on lines 3 and 14 of this file, because the directory and private key you previously set up for DKIM is owned (and can only be read by) the opendkim user and group.</p>
+
+<p>Also notice on line 12 that we’re re-using the <code>/etc/opendkim/TrustedHosts</code> file you set up for OpenDKIM. This is comparable to the InternalHosts directive in your OpenDKIM configuration file. You’re telling dk-milter that these domains are internal (with the -i flag), so it’s OK to sign their outgoing mail.</p>
+
+<p>Finally, notice that I left the User configuration settings on lines 16-22 commented out. You can delete them if you want, since we won’t need them for this implementation.</p>
+
+<h4>Edit your Postfix configuration</h4>
+
+<p>Since you already added lines to your Postfix main.cf file to tell Postfix how to interact with OpenDKIM, you can just add the milter information for dk-milter to the end of those same lines. Find the lines in your Postfix main.cf that look like this:</p>
+
+<pre><code>smtpd_milters = inet:localhost:8891
+non_smtpd_milters = inet:localhost:8891
+</code></pre>
+
+<p>and edit them to look like this:</p>
+
+<pre><code>smtpd_milters = inet:localhost:10035, inet:localhost:8891
+non_smtpd_milters = inet:localhost:10035, inet:localhost:8891
+</code></pre>
+
+<p><code>Notice that I put the milter info for dk-milter first and for OpenDKIM last</code>. This actually determines the order of each milter’s headers in your outgoing mail (the first shall be last and the last shall be first). I recommend using this order, which places the DKIM signature above the DomainKeys signature in your outgoing email. That way, the receiving mailer will parse the DKIM information (the newer protocol) first.</p>
+
+<h4>Start dk-milter and restart Postfix</h4>
+
+<p>You’re ready to fire things up. Start dk-milter with:</p>
+
+<pre><code># /sbin/service dk-milter start
+</code></pre>
+
+<p>You should get a message that says:</p>
+
+<pre><code>Starting DomainKeys milter (dk-filter #0):     [  OK  ]
+</code></pre>
+
+<p>If you get an error message, don’t freak out. You probably just mistyped something in one of the config files. Go to the line number of the file listed, and check your work against the example(s) in this tutorial. Then try starting up dk-milter again.</p>
+
+<p>Once dk-milter starts successfully, restart Postfix with:</p>
+
+<pre><code># /sbin/service postfix restart
+</code></pre>
+
+<p>If everything looks good, you may want to consider running chkconfig on dk-milter to make sure it starts when you reboot:</p>
+
+<pre><code># /sbin/chkconfig --level 2345 dk-milter on
+</code></pre>
+
+<h4>Modifying DNS records</h4>
+
+<p>While DomainKeys (via <code>dk-milter</code>)(yahoo) will rely on the same DNS information as <code>DKIM (via OpenDKIM)</code> for selector information, there is one minor addition and one minor change you need to make to your domain’s DNS records to support the older DomainKeys protocol.</p>
+
+<p>First, you need to add a TXT Record to your zone file that reads:</p>
+
+<pre><code>_domainkey.example.com IN TXT "t=y; o=~"
+</code></pre>
+
+<p>The <em>domainkey TXT record is slightly comparable to the </em>adsp TXT record you added when setting up DKIM. It basically publishes your DomainKeys policies. The t=y means the domain is in test mode, so only use this setting while you’re testing things out. Once you’ve verified it works, remember to change it to t=n. The o=~ means that some emails from this domain will be signed, but not all. A setting of o=- means that every email from this domain will be signed, and that a messages origin should be in doubt if it comes from this domain unsigned. For now, the safest setting is o=~.</p>
+
+<p>Second, you need to edit the TXT file for your selector and remove the v=DKIM1; and g=*; arguments, as these sometimes cause issues for a few mail servers when they attempt to validate the older DomainKeys.</p>
+
+<h4>Testing Things Out</h4>
+
+<p>As always, the best way to see that everything is working on the server side is to keep an eye on your <code>/var/log/maillog</code> file. Do a:</p>
+
+<pre><code># tail -f /var/log/maillog
+</code></pre>
+
+<p>When dk-milter starts (or restarts), you should see lines like:</p>
+
+<pre><code>dk-filter[19535]: Sendmail DomainKeys Filter v1.0.2 starting (args: -u opendkim-milt -p inet:10035@localhost -d /etc/mail/dkim/trusted-hosts -s /etc/mail/domainkeys/keylist -S default -b sv -c simple -C bad=r,dns=t,int=t,no=a,miss=r -h -l -D -k -i /etc/mail/dkim/trusted-hosts -P /var/run/dk-filter0.pid)
+</code></pre>
+
+<p>Unlike OpenDKIM, dk-milter doesn’t log anything when you send a mail that gets successfully signed, so the best way to check that your signed mail is being authenticated and that your DNS records are properly set up is to use one of the free testing services. My favorites are:</p>
+
+<ul>
+<li>Brandon Checketts Email Validator</li>
+<li>Send a signed email to: autorespond+dkim@dk.elandsys.com</li>
+<li>Send a signed email to: sa-test@sendmail.net</li>
+<li>Send a signed email to: check-auth@verifier.port25.com</li>
+</ul>
+
+
+<p>(you can put all of the test email addresses in the To: field of a single outgoing message to test)
+Each of these will tell you if things are working properly, and give you some pointers on troubleshooting if needed. If  Brandon Checketts’ Email Validator gives an error message in the DomainKeys field that reads:</p>
+
+<pre><code>Unable to verify signature
+  granularity does not match address
+</code></pre>
+
+<p>That probably means the g=*; setting from your selector’s DNS TXT record is either still in your record or that the record is being cached by Brandon’s server. Wait an hour and then try again.</p>
+
+<p>If you have a Gmail account, you can also send a signed message there for a quick and easy test. I like to click the Show Original link (under the Reply drop-down on the right) to see the signed headers. You should see headers for DKIM as well as DomainKeys.</p>
+
+<p>The one result that everyone seems to want is this reply from the verifier.port.25.com test:</p>
+
+<pre><code>==========================================================
+Summary of Results
+==========================================================
+SPF check:          pass
+DomainKeys check:   pass
+DKIM check:         pass
+Sender-ID check:    pass
+SpamAssassin check: ham
+</code></pre>
+
+<p>If you get that result, then congratulations – you’re signing mail with DKIM and DomainKeys. Sure, it’s a little redundant, but apparently overkill is just your style.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1246,174 +1827,6 @@ Grep NOT
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/">Integrate Tire Elasticsearch on Bad Server</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-11-01T13:24:00+08:00" pubdate data-updated="true">Nov 1<span>st</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Installing the JRE
-Type the following commands into your SSH terminal.</p>
-
-<pre><code>apt-get install openjdk-6-jdk 
-</code></pre>
-
-<p>You should also have JDK 6 or above installed.</p>
-
-<pre><code>$ curl -k -L -o elasticsearch-0.19.0.tar.gz http://github.com/downloads/elasticsearch/elasticsearch/elasticsearch-0.19.0.tar.gz
-$ tar -zxvf elasticsearch-0.19.0.tar.gz
-$ ./elasticsearch-0.19.0/bin/elasticsearch -f
-</code></pre>
-
-<p>How to make it manage by ubuntu better.</p>
-
-<pre><code>$ cp ./elasticsearch-0.19 /user/local/elasticsearch
-</code></pre>
-
-<p>make <code>/etc/init.d/elasticsearch</code></p>
-
-<pre><code>$ vi /etc/init.d/elasticsearch
-
-
-### END INIT INFO
-ES_HOME=/usr/local/elasticsearch
-export ES_MIN_MEM=32m
-export ES_MAX_MEM=128m
-DAEMON=$ES_HOME/bin/elasticsearch
-NAME=elasticsearch
-DESC=elasticsearch
-PID_FILE=/var/run/$NAME.pid
-LOG_DIR=/var/log/$NAME
-DATA_DIR=/var/lib/$NAME
-WORK_DIR=/tmp/$NAME
-CONFIG_FILE=/etc/$NAME/elasticsearch.yml
-DAEMON_OPTS="-p $PID_FILE -Des.config=$CONFIG_FILE -Des.path.home=$ES_HOME -Des.path.logs=$LOG_DIR -        Des.path.data=$DATA_DIR -Des.path.work=$WORK_DIR"
-
-
-test -x $DAEMON || exit 0
-
-set -e
-
-case "$1" in
-  start)
-    echo -n "Starting $DESC: "
-    mkdir -p $LOG_DIR $DATA_DIR $WORK_DIR
-    if start-stop-daemon --start --pidfile $PID_FILE --startas $DAEMON -- $DAEMON_OPTS
-    then
-        echo "started."
-    else
-        echo "failed."
-    fi
-    ;;
-  stop)
-    echo -n "Stopping $DESC: "
-    if start-stop-daemon --stop --pidfile $PID_FILE
-    then
-        echo "stopped."
-    else
-        echo "failed."
-    fi
-    ;;
-  restart|force-reload)
-    ${0} stop
-    sleep 0.5
-    ${0} start
-    ;;
-  *)
-    N=/etc/init.d/$NAME
-    echo "Usage: $N {start|stop|restart|force-reload}" &gt;&amp;2
-    exit 1
-    ;;
-esac
-exit 0
-</code></pre>
-
-<p>To a number suitable for the size of your forum.</p>
-
-<p>I reccomend approximately <code>256mb</code> for the MIN_MEM and <code>1 GB</code> for the MAX_MEM per <code>1 million</code> posts on your forum.</p>
-
-<pre><code>1 Million Posts: 256m:1g
-2 Million Posts: 512m:2g
-3 Million Posts: 768m:3g
-4 Million Posts: 1024m:4g
-etc
-</code></pre>
-
-<p>This will not mean the service will use all that available memory, however it will have it at its disposal if required.</p>
-
-<p>So for example a <code>3 Million</code> Post forum would edit</p>
-
-<pre><code>export ES_MIN_MEM=768m
-export ES_MAX_MEM=3g
-</code></pre>
-
-<p>make the script executable and start automaticly.</p>
-
-<pre><code>chmod a+x /etc/init.d/elasticsearch 
-update-rc.d elasticsearch defaults
-/etc/init.d/elasticsearch start
-
-vi /etc/elasticsearch/elasticsearch.yml
-</code></pre>
-
-<p> and add this</p>
-
-<pre><code>#/etc/elasticsearch/elasticsearch.yml
-network :
-  host :  127.0.0.1
-path:
-  logs: /var/log/elasticsearch
-  data: /var/data/elasticsearch
-
-cluster.name: PUT-SOMETHING-UNIQUE-HERE
-</code></pre>
-
-<p>make data folder</p>
-
-<pre><code>mkdir -p  /var/data/elasticsearch
-</code></pre>
-
-<p>make sure  <code>127.0.0.1 localhost</code> in your <code>/ect/hosts</code>, this is very important, it&#8217;s waste of my time.</p>
-
-<p>now you can start to build the index.</p>
-
-<pre><code>RAILS_ENV=production rake environment tire:import CLASS='List'
-</code></pre>
-
-<p>on mac, there is  a simpler way:</p>
-
-<pre><code>brew install elasticsearch
-elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elasticsearch.yml
-</code></pre>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; 更早</a>
@@ -1429,6 +1842,10 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/01/13/about-mail-server/">about Mail Server</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/01/07/setup-new-environment/">setup new environment</a>
       </li>
     
@@ -1442,10 +1859,6 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
     
       <li class="post">
         <a href="/blog/2012/11/08/how-to-enhance-mysql-performance/">How to enhance mysql performance</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/">How to integrate mmseg with elasticsearch</a>
       </li>
     
   </ul>
