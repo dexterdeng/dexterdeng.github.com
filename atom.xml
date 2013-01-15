@@ -4,7 +4,7 @@
   <title><![CDATA[脑波网]]></title>
   <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2013-01-15T13:50:28+08:00</updated>
+  <updated>2013-01-15T15:23:10+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,177 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[install tivoli]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/15/install-tivoli/"/>
+    <updated>2013-01-15T15:21:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/15/install-tivoli</id>
+    <content type="html"><![CDATA[<pre><code>rpm -ivh gsk*
+rpm -ivh TIVsm-* tsm-6.2.2.6-P1MH8.x86_64.rpm
+yum install compat-libstdc++-33
+rpm -ivh TIVsm-* tsm-6.2.2.6-P1MH8.x86_64.rpm
+/opt/tivoli/tsm/client/ba/bin/dsmconf
+dsmc
+/etc/rc.d/init.d/dsmcad restart
+/etc/rc.d/init.d/dsmc restart
+ps aux | grep dsmc
+cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
+/etc/rc.d/init.d/dsmcad restart
+/etc/rc.d/init.d/dsmc restart
+ps aux | grep dsmc
+cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
+cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
+cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[configure php + nginx ]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/15/configure-php-plus-nginx/"/>
+    <updated>2013-01-15T15:06:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/15/configure-php-plus-nginx</id>
+    <content type="html"><![CDATA[<p>nginx装好后， 开始装php。</p>
+
+<p>记住以下几点：</p>
+
+<ul>
+<li>务必装教新php, 新版稳定版事5.3.30</li>
+<li>php-fpm已加入php核心，安装时注意配置 &#8211;enable-fpm</li>
+<li>安装时务必&#8211;with-mysql</li>
+<li><p>如果事64位，记住编译时加上 &#8211;with-libdir=lib64 ,否则会出现如下问题:</p>
+
+<p>configure:60376: checking for mysql_error in -lmysqlclient
+configure:60395: gcc -o conftest -I/usr/include -g -O2  -Wl,-rpath,/usr/lib/mysql -L/usr/lib/mysql -L/usr/lib  -Wl,-rpath,/usr/kerberos/lib64 -L/usr/kerberos/lib64 -Wl,-rpath,/usr -L/usr conftest.c -lmysqlclient  -lz -lpng -lz -lcurl -lz -lrt -lresolv -lm -ldl -lnsl  -lxml2 -lz -lm -lssl -lcrypto -ldl -lz -lcurl -ldl -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err -lidn -lssl -lcrypto -lz -lxml2 -lz -lm 1>&amp;5
+/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.so when searching for -lmysqlclient
+/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.a when searching for -lmysqlclient
+/usr/bin/ld: cannot find -lmysqlclient
+collect2: ld returned 1 exit status</p></li>
+</ul>
+
+
+<h4>准备</h4>
+
+<pre><code>yum install mysql-devel
+yum install nginx
+chkconfig --levels 235 nginx on
+/etc/init.d/nginx start
+</code></pre>
+
+<h4>安装</h4>
+
+<pre><code># yum install   php-mysql php-gd php-imap php-ldap php-odbc php-pear php-xml php-xmlrpc php-magickwand php-magpierss php-mbstring php-mcrypt php-mssql php-shout php-snmp php-soap php-tidy
+#yum install php-pecl-apc
+
+
+wget http://ca1.php.net/distributions/php-5.3.20.tar.gz
+tar -xzvf php-5.3.20.tar.gz
+ ./configure --with-libdir=lib64  --with-mysql   --enable-fpm    --enable-libgcc   --with-openssl --with-zlib
+make
+make install
+
+拷贝配置文件
+
+/etc/init.d/php-fpm stop
+/etc/init.d/php-fpm start
+</code></pre>
+
+<ul>
+<li><p>Then open <code>/etc/php.ini</code> and set <code>cgi.fix_pathinfo=0</code>:</p></li>
+<li><p>you should set date.timezone in /etc/php.ini:</p>
+
+<p>[&#8230;]
+[Date]
+; Defines the default timezone used by the date functions
+; http://www.php.net/manual/en/datetime.configuration.php#ini.date.timezone
+date.timezone = &#8220;Europe/Berlin&#8221;
+[&#8230;]</p>
+
+<p>从<code>cat /etc/sysconfig/clock</code>可以查到时区</p></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[postfix mailq 操作]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/15/postfix-mailq-cao-zuo/"/>
+    <updated>2013-01-15T14:56:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/15/postfix-mailq-cao-zuo</id>
+    <content type="html"><![CDATA[<p>如果你要套用其中一笔Queue 中的邮件，可以先用mailq 或postqueue 指令查询出或筛选出你要重新排Queue 的邮件ID，并使用以下指令重新排Queue：</p>
+
+<pre><code>postsuper -r 7B8CE830BD
+</code></pre>
+
+<p>若要套用「所有」邮件，可以使用特殊的ALL 关键字：</p>
+
+<pre><code>postsuper -r ALL
+</code></pre>
+
+<p>最后再强制重送所有的信件</p>
+
+<pre><code>postqueue -f
+</code></pre>
+
+<p>检视剩下多少Queue</p>
+
+<pre><code>postqueue -p
+</code></pre>
+
+<p>若还是不行的话… 那就考虑删除掉吧XD</p>
+
+<p>列出目前在 Mail Queue 中的信件</p>
+
+<pre><code>mailq
+</code></pre>
+
+<p>删除某一个队列的邮件</p>
+
+<pre><code>postsuper -d queue_id
+</code></pre>
+
+<p>删除所有在 Queue 中的邮件</p>
+
+<pre><code>postsuper -d ALL
+</code></pre>
+
+<p>删除所有正在deferred 队列中的邮件( 删除曾经发送失败的信)</p>
+
+<pre><code>postsuper -d ALL deferred
+</code></pre>
+
+<p>删除所有正在deferred 队列中的邮件( 可看出哪些信被删除了)</p>
+
+<pre><code>find /var/spool/postfix/deferred -type f -exec rm -vf \{\} \;
+</code></pre>
+
+<p>删掉「三天以前」无法发出的邮件</p>
+
+<p>    find /var/spool/postfix/deferred -type f -mtime +3 -exec rm -f {} \;</p>
+
+<p>列出目前所有无法发出的邮件</p>
+
+<p>    find /var/spool/postfix/deferred -type f -exec ls -l –time-style=+%Y-%m-%d_%H:%M:%S {} \;</p>
+
+<p>删除超过5 天的&#8221;defer&#8221; 队列中的退信纪录</p>
+
+<p>    find /var/spool/postfix/defer -type f -mtime +5 -exec rm -f {} \;</p>
+
+<p>若你发现在MailQ里面有相同的地址大量寄送垃圾信件时，可以透过下面的方式来挡掉…</p>
+
+<pre><code># vi /etc/postfix/header_checks
+# 加入要挡掉的来原信
+/^From:.service\@kcg\.gov\.tw/ DISCARD Attack Mail
+
+# postmap -q – regexp:/etc/postfix/header_checks &lt; /etc/postfix/header_checks
+# 重新让 Postfix 新 header_checks 生效
+
+# mailq | grep "xxx@abc.com" | cut -d " " -f1 | cut -d'*' -f1 | postsuper -d -
+# 删掉所有来自xxx@abc.com的MailQ
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[about Mail Server]]></title>

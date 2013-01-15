@@ -71,8 +71,20 @@
         <lastmod>2013-01-15T13:49:07+08:00</lastmod>
     </url>
     <url>
+        <loc>http://dexterdeng.github.com/blog/2013/01/15/postfix-mailq-cao-zuo/</loc>
+        <lastmod>2013-01-15T15:04:54+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://dexterdeng.github.com/blog/2013/01/15/configure-php-plus-nginx/</loc>
+        <lastmod>2013-01-15T15:17:43+08:00</lastmod>
+    </url>
+    <url>
+        <loc>http://dexterdeng.github.com/blog/2013/01/15/install-tivoli/</loc>
+        <lastmod>2013-01-15T15:22:20+08:00</lastmod>
+    </url>
+    <url>
         <loc>http://dexterdeng.github.com/blog/archives/</loc>
-        <lastmod>2013-01-15T13:49:07+08:00</lastmod>
+        <lastmod>2013-01-15T15:22:20+08:00</lastmod>
     </url>
     <url>
         <loc>http://dexterdeng.github.com/commands/</loc>
@@ -80,6 +92,6 @@
     </url>
     <url>
         <loc>http://dexterdeng.github.com/</loc>
-        <lastmod>2013-01-15T13:49:07+08:00</lastmod>
+        <lastmod>2013-01-15T15:22:20+08:00</lastmod>
     </url>
 </urlset>

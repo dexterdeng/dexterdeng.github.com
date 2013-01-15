@@ -5,14 +5,14 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>delete blank lines and replace with enter - 脑波网</title>
+  <title>configure php + nginx  - 脑波网</title>
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="How to replace , with enter e.g. How to replace aaa,bbb,ccc with aaa
-bbb
-ccc open it with mvim :%s/,/^M/g
-# you need to type CTRL-V &lt;CR&gt; to get &hellip;">
+  <meta name="description" content="nginx装好后， 开始装php。 记住以下几点： 务必装教新php, 新版稳定版事5.3.30
+php-fpm已加入php核心，安装时注意配置 &#8211;enable-fpm
+安装时务必&#8211;with-mysql
+如果事64位，记住编译时加上 &#8211;with-libdir= &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -21,7 +21,7 @@ ccc open it with mvim :%s/,/^M/g
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/">
+  <link rel="canonical" href="http://dexterdeng.github.com/blog/2013/01/15/configure-php-plus-nginx/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -72,7 +72,7 @@ ccc open it with mvim :%s/,/^M/g
   
   <header>
     
-      <h1 class="entry-title">Delete Blank Lines and Replace With Enter</h1>
+      <h1 class="entry-title">Configure Php + Nginx</h1>
     
     
       <p class="meta">
@@ -88,32 +88,72 @@ ccc open it with mvim :%s/,/^M/g
   
 
 
-<time datetime="2012-11-05T17:00:00+08:00" pubdate data-updated="true">Nov 5<span>th</span>, 2012</time>
+<time datetime="2013-01-15T15:06:00+08:00" pubdate data-updated="true">Jan 15<span>th</span>, 2013</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><h3>How to replace , with enter</h3>
+<div class="entry-content"><p>nginx装好后， 开始装php。</p>
 
-<p>e.g. How to replace <code>aaa,bbb,ccc</code> with</p>
+<p>记住以下几点：</p>
 
-<pre><code>aaa
-bbb
-ccc
+<ul>
+<li>务必装教新php, 新版稳定版事5.3.30</li>
+<li>php-fpm已加入php核心，安装时注意配置 &#8211;enable-fpm</li>
+<li>安装时务必&#8211;with-mysql</li>
+<li><p>如果事64位，记住编译时加上 &#8211;with-libdir=lib64 ,否则会出现如下问题:</p>
+
+<p>configure:60376: checking for mysql_error in -lmysqlclient
+configure:60395: gcc -o conftest -I/usr/include -g -O2  -Wl,-rpath,/usr/lib/mysql -L/usr/lib/mysql -L/usr/lib  -Wl,-rpath,/usr/kerberos/lib64 -L/usr/kerberos/lib64 -Wl,-rpath,/usr -L/usr conftest.c -lmysqlclient  -lz -lpng -lz -lcurl -lz -lrt -lresolv -lm -ldl -lnsl  -lxml2 -lz -lm -lssl -lcrypto -ldl -lz -lcurl -ldl -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err -lidn -lssl -lcrypto -lz -lxml2 -lz -lm 1>&amp;5
+/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.so when searching for -lmysqlclient
+/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.a when searching for -lmysqlclient
+/usr/bin/ld: cannot find -lmysqlclient
+collect2: ld returned 1 exit status</p></li>
+</ul>
+
+
+<h4>准备</h4>
+
+<pre><code>yum install mysql-devel
+yum install nginx
+chkconfig --levels 235 nginx on
+/etc/init.d/nginx start
 </code></pre>
 
-<p>open it with <code>mvim</code></p>
+<h4>安装</h4>
 
-<pre><code>:%s/,/^M/g
-# you need to type CTRL-V &lt;CR&gt; to get a ^M here
+<pre><code># yum install   php-mysql php-gd php-imap php-ldap php-odbc php-pear php-xml php-xmlrpc php-magickwand php-magpierss php-mbstring php-mcrypt php-mssql php-shout php-snmp php-soap php-tidy
+#yum install php-pecl-apc
+
+
+wget http://ca1.php.net/distributions/php-5.3.20.tar.gz
+tar -xzvf php-5.3.20.tar.gz
+ ./configure --with-libdir=lib64  --with-mysql   --enable-fpm    --enable-libgcc   --with-openssl --with-zlib
+make
+make install
+
+拷贝配置文件
+
+/etc/init.d/php-fpm stop
+/etc/init.d/php-fpm start
 </code></pre>
 
-<h3>How to remove blank lines</h3>
+<ul>
+<li><p>Then open <code>/etc/php.ini</code> and set <code>cgi.fix_pathinfo=0</code>:</p></li>
+<li><p>you should set date.timezone in /etc/php.ini:</p>
 
-<pre><code>:%g/^\s*$/d
-</code></pre>
+<p>[&#8230;]
+[Date]
+; Defines the default timezone used by the date functions
+; http://www.php.net/manual/en/datetime.configuration.php#ini.date.timezone
+date.timezone = &#8220;Europe/Berlin&#8221;
+[&#8230;]</p>
+
+<p>从<code>cat /etc/sysconfig/clock</code>可以查到时区</p></li>
+</ul>
+
 </div>
 
 
@@ -136,12 +176,12 @@ ccc
   
 
 
-<time datetime="2012-11-05T17:00:00+08:00" pubdate data-updated="true">Nov 5<span>th</span>, 2012</time>
+<time datetime="2013-01-15T15:06:00+08:00" pubdate data-updated="true">Jan 15<span>th</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/vim/'>vim</a>
+    <a class='category' href='/blog/categories/linux/'>linux</a>
   
 </span>
 
@@ -150,7 +190,7 @@ ccc
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2013/01/15/configure-php-plus-nginx/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2013/01/15/configure-php-plus-nginx/" >Tweet</a>
   
   
   <div class="g-plusone" data-size="medium"></div>
@@ -163,10 +203,10 @@ ccc
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2012/11/03/skip-vadation-or-skip-flilter/" title="Previous Post: skip vadation or skip flilter">&laquo; skip vadation or skip flilter</a>
+        <a class="basic-alignment left" href="/blog/2013/01/15/postfix-mailq-cao-zuo/" title="Previous Post: postfix mailq 操作">&laquo; postfix mailq 操作</a>
       
       
-        <a class="basic-alignment right" href="/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/" title="Next Post: How to integrate mmseg with elasticsearch">How to integrate mmseg with elasticsearch &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2013/01/15/install-tivoli/" title="Next Post: install tivoli">install tivoli &raquo;</a>
       
     </p>
   </footer>
@@ -258,8 +298,8 @@ ccc
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/';
-        var disqus_url = 'http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/';
+        var disqus_identifier = 'http://dexterdeng.github.com/blog/2013/01/15/configure-php-plus-nginx/';
+        var disqus_url = 'http://dexterdeng.github.com/blog/2013/01/15/configure-php-plus-nginx/';
         var disqus_script = 'embed.js';
       
     (function () {

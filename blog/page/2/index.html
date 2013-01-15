@@ -9,8 +9,7 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="Installing the JRE
-Type the following commands into your SSH terminal. apt-get install openjdk-6-jdk You should also have JDK 6 or above installed &hellip;">
+  <meta name="description" content="run all validation and filters @user.save run no validation but all filters @user.save(false) run no validation and no filters @user.send(: &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -67,6 +66,293 @@ Type the following commands into your SSH terminal. apt-get install openjdk-6-jd
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/11/03/skip-vadation-or-skip-flilter/">Skip Vadation or Skip Flilter</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-03T17:09:00+08:00" pubdate data-updated="true">Nov 3<span>rd</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h3>run all validation and filters</h3>
+
+<pre><code>@user.save
+</code></pre>
+
+<h3>run  no validation but all filters</h3>
+
+<pre><code>@user.save(false)
+</code></pre>
+
+<h3>run  no validation and no filters</h3>
+
+<pre><code>@user.send(:update_without_callbacks)
+</code></pre>
+
+<p>since it is private, you need to use send</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter/">Never Call Save/update in Before/after_save Filter</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-03T17:02:00+08:00" pubdate data-updated="true">Nov 3<span>rd</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Check two source code first:</p>
+
+<pre><code>def update_attribute(name, value)
+  send(name.to_s + '=', value)
+  save(false)
+end
+</code></pre>
+
+<p>and</p>
+
+<pre><code> def update_attributes(attributes)
+   self.attributes = attributes
+   save
+ end
+</code></pre>
+
+<p>Check the source code, these 2 <code>update</code> methods contain <code>save</code>. in fact,
+<code>update</code>  always means <code>save</code>.  these methods can&#8217;t be in <code>after_save</code>,
+<code>before_save</code>. as  if you call <code>save</code>, <code>save</code> trigger  <code>before_save/after_save</code>,
+and <code>before_save/after_save</code> trigger <code>save</code> again. &#8230;  No ending.</p>
+
+<p>This is very important.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/11/03/linux-grep-or/">Linux Grep or , Grep and, Grep NOT</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-03T00:11:00+08:00" pubdate data-updated="true">Nov 3<span>rd</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><strong>Question:</strong> Can you explain how to use <code>OR</code>, <code>AND</code> and <code>NOT</code> operators in Unix grep command with some examples?</p>
+
+<p><strong>Answer:</strong> In grep, we have options equivalent to <code>OR</code> and <code>NOT</code> operators. There is no grep <code>AND</code> opearator. But, you can simulate <code>AND</code> using patterns. The examples mentioned below will help you to understand how to use <code>OR</code>, <code>AND</code> and <code>NOT</code> in Linux grep command.</p>
+
+<p>The following employee.txt file is used in the following examples.</p>
+
+<pre><code>$ cat employee.txt
+100  Thomas  Manager    Sales       $5,000
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+400  Nisha   Manager    Marketing   $9,500
+500  Randy   Manager    Sales       $6,000
+</code></pre>
+
+<p>You already knew that grep is extremely powerful based on these grep command examples.</p>
+
+<h2>Grep OR Operator</h2>
+
+<p>Use any one of the following 4 methods for grep OR. I prefer method number 3 mentioned below for grep OR operator.</p>
+
+<h3>1. Grep OR Using \|</h3>
+
+<p>If you use the grep command without any option, you need to use <code>\|</code> to separate multiple patterns for the or condition.</p>
+
+<pre><code>grep 'pattern1\|pattern2' filename
+</code></pre>
+
+<p>For example, grep either Tech or Sales from the employee.txt file. Without the back slash in front of the pipe, the following will not work.</p>
+
+<pre><code>$ grep 'Tech\|Sales' employee.txt
+100  Thomas  Manager    Sales       $5,000
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+500  Randy   Manager    Sales       $6,000
+</code></pre>
+
+<h3>2. Grep OR Using -E</h3>
+
+<p><code>grep -E</code> option is for extended regexp. If you use the grep command with <code>-E</code> option, you just need to use | to separate multiple patterns for the or condition.</p>
+
+<pre><code>grep -E 'pattern1|pattern2' filename
+</code></pre>
+
+<p>For example, grep either Tech or Sales from the employee.txt file. Just use the | to separate multiple OR patterns.</p>
+
+<pre><code>$ grep -E 'Tech|Sales' employee.txt
+100  Thomas  Manager    Sales       $5,000
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+500  Randy   Manager    Sales       $6,000
+</code></pre>
+
+<h3>3. Grep OR Using egrep</h3>
+
+<p>egrep is exactly same as <code>grep -E</code>. So, use egrep (without any option) and separate multiple patterns for the or condition.</p>
+
+<pre><code>egrep 'pattern1|pattern2' filename
+</code></pre>
+
+<p>For example, grep either Tech or Sales from the employee.txt file. Just use the | to separate multiple OR patterns.</p>
+
+<pre><code>$ egrep 'Tech|Sales' employee.txt
+100  Thomas  Manager    Sales       $5,000
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+500  Randy   Manager    Sales       $6,000
+</code></pre>
+
+<h3>4. Grep OR Using grep -e</h3>
+
+<p>Using grep -e option you can pass only one parameter. Use multiple <code>-e</code> option in a single command to use multiple patterns for the or condition.</p>
+
+<pre><code>grep -e pattern1 -e pattern2 filename
+</code></pre>
+
+<p>For example, grep either Tech or Sales from the employee.txt file. Use multiple <code>-e</code> option with grep for the multiple OR patterns.</p>
+
+<pre><code>$ grep -e Tech -e Sales employee.txt
+100  Thomas  Manager    Sales       $5,000
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+500  Randy   Manager    Sales       $6,000
+Grep AND
+</code></pre>
+
+<h3>5. Grep AND using <code>-E ‘pattern1.*pattern2'</code></h3>
+
+<p>There is no AND operator in grep. But, you can simulate AND using grep -E option.</p>
+
+<pre><code>grep -E 'pattern1.*pattern2' filename
+grep -E 'pattern1.*pattern2|pattern2.*pattern1' filename
+</code></pre>
+
+<p>The following example will grep all the lines that contain both “Dev” and “Tech” in it (in the same order).</p>
+
+<pre><code>$ grep -E 'Dev.*Tech' employee.txt
+200  Jason   Developer  Technology  $5,500
+</code></pre>
+
+<p>The following example will grep all the lines that contain both “Manager” and “Sales” in it (in any order).</p>
+
+<pre><code>$ grep -E 'Manager.*Sales|Sales.*Manager' employee.txt
+</code></pre>
+
+<p>Note: Using regular expressions in grep is very powerful if you know how to use it effectively.</p>
+
+<h3>6. Grep AND using Multiple grep command</h3>
+
+<p>You can also use multiple grep command separated by pipe to simulate AND scenario.</p>
+
+<pre><code>grep -E 'pattern1' filename | grep -E 'pattern2'
+</code></pre>
+
+<p>The following example will grep all the lines that contain both “Manager” and “Sales” in the same line.</p>
+
+<pre><code>$ grep Manager employee.txt | grep Sales
+100  Thomas  Manager    Sales       $5,000
+500  Randy   Manager    Sales       $6,000
+Grep NOT
+</code></pre>
+
+<h3>7. Grep NOT using grep -v</h3>
+
+<p>Using grep <code>-v</code> you can simulate the NOT conditions. <code>-v</code> option is for invert match. i.e It matches all the lines except the given pattern.</p>
+
+<pre><code>grep -v 'pattern1' filename
+</code></pre>
+
+<p>For example, display all the lines except those that contains the keyword “Sales”.</p>
+
+<pre><code>$ grep -v Sales employee.txt
+200  Jason   Developer  Technology  $5,500
+300  Raj     Sysadmin   Technology  $7,000
+400  Nisha   Manager    Marketing   $9,500
+</code></pre>
+
+<p>You can also combine NOT with other operator to get some powerful combinations.</p>
+
+<p>For example, the following will display either Manager or Developer (bot ignore Sales).</p>
+
+<pre><code>$ egrep 'Manager|Developer' employee.txt | grep -v Sales
+200  Jason   Developer  Technology  $5,500
+400  Nisha   Manager    Marketing   $9,500
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -449,23 +735,23 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/01/15/install-tivoli/">install tivoli</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/15/configure-php-plus-nginx/">configure php + nginx </a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/15/postfix-mailq-cao-zuo/">postfix mailq 操作</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/01/13/about-mail-server/">about Mail Server</a>
       </li>
     
       <li class="post">
         <a href="/blog/2013/01/07/setup-new-environment/">setup new environment</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/07/%5B%3F%5D-dian-jing-yan-jiao-xun/">一点经验教训</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/11/08/mysqlyou-hua-my-dot-ini-pei-zhi-shuo-ming/">mySQL优化 my.ini 配置说明</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/11/08/how-to-enhance-mysql-performance/">How to enhance mysql performance</a>
       </li>
     
   </ul>

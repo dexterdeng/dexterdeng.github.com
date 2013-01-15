@@ -5,14 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>delete blank lines and replace with enter - 脑波网</title>
+  <title>postfix mailq 操作 - 脑波网</title>
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="How to replace , with enter e.g. How to replace aaa,bbb,ccc with aaa
-bbb
-ccc open it with mvim :%s/,/^M/g
-# you need to type CTRL-V &lt;CR&gt; to get &hellip;">
+  <meta name="description" content="如果你要套用其中一笔Queue 中的邮件，可以先用mailq 或postqueue 指令查询出或筛选出你要重新排Queue 的邮件ID，并使用以下指令重新排Queue： postsuper -r 7B8CE830BD 若要套用「所有」邮件，可以使用特殊的ALL 关键字： postsuper -r &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -21,7 +18,7 @@ ccc open it with mvim :%s/,/^M/g
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/">
+  <link rel="canonical" href="http://dexterdeng.github.com/blog/2013/01/15/postfix-mailq-cao-zuo/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -72,7 +69,7 @@ ccc open it with mvim :%s/,/^M/g
   
   <header>
     
-      <h1 class="entry-title">Delete Blank Lines and Replace With Enter</h1>
+      <h1 class="entry-title">Postfix Mailq 操作</h1>
     
     
       <p class="meta">
@@ -88,31 +85,83 @@ ccc open it with mvim :%s/,/^M/g
   
 
 
-<time datetime="2012-11-05T17:00:00+08:00" pubdate data-updated="true">Nov 5<span>th</span>, 2012</time>
+<time datetime="2013-01-15T14:56:00+08:00" pubdate data-updated="true">Jan 15<span>th</span>, 2013</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><h3>How to replace , with enter</h3>
+<div class="entry-content"><p>如果你要套用其中一笔Queue 中的邮件，可以先用mailq 或postqueue 指令查询出或筛选出你要重新排Queue 的邮件ID，并使用以下指令重新排Queue：</p>
 
-<p>e.g. How to replace <code>aaa,bbb,ccc</code> with</p>
-
-<pre><code>aaa
-bbb
-ccc
+<pre><code>postsuper -r 7B8CE830BD
 </code></pre>
 
-<p>open it with <code>mvim</code></p>
+<p>若要套用「所有」邮件，可以使用特殊的ALL 关键字：</p>
 
-<pre><code>:%s/,/^M/g
-# you need to type CTRL-V &lt;CR&gt; to get a ^M here
+<pre><code>postsuper -r ALL
 </code></pre>
 
-<h3>How to remove blank lines</h3>
+<p>最后再强制重送所有的信件</p>
 
-<pre><code>:%g/^\s*$/d
+<pre><code>postqueue -f
+</code></pre>
+
+<p>检视剩下多少Queue</p>
+
+<pre><code>postqueue -p
+</code></pre>
+
+<p>若还是不行的话… 那就考虑删除掉吧XD</p>
+
+<p>列出目前在 Mail Queue 中的信件</p>
+
+<pre><code>mailq
+</code></pre>
+
+<p>删除某一个队列的邮件</p>
+
+<pre><code>postsuper -d queue_id
+</code></pre>
+
+<p>删除所有在 Queue 中的邮件</p>
+
+<pre><code>postsuper -d ALL
+</code></pre>
+
+<p>删除所有正在deferred 队列中的邮件( 删除曾经发送失败的信)</p>
+
+<pre><code>postsuper -d ALL deferred
+</code></pre>
+
+<p>删除所有正在deferred 队列中的邮件( 可看出哪些信被删除了)</p>
+
+<pre><code>find /var/spool/postfix/deferred -type f -exec rm -vf \{\} \;
+</code></pre>
+
+<p>删掉「三天以前」无法发出的邮件</p>
+
+<p>    find /var/spool/postfix/deferred -type f -mtime +3 -exec rm -f {} \;</p>
+
+<p>列出目前所有无法发出的邮件</p>
+
+<p>    find /var/spool/postfix/deferred -type f -exec ls -l –time-style=+%Y-%m-%d_%H:%M:%S {} \;</p>
+
+<p>删除超过5 天的&#8221;defer&#8221; 队列中的退信纪录</p>
+
+<p>    find /var/spool/postfix/defer -type f -mtime +5 -exec rm -f {} \;</p>
+
+<p>若你发现在MailQ里面有相同的地址大量寄送垃圾信件时，可以透过下面的方式来挡掉…</p>
+
+<pre><code># vi /etc/postfix/header_checks
+# 加入要挡掉的来原信
+/^From:.service\@kcg\.gov\.tw/ DISCARD Attack Mail
+
+# postmap -q – regexp:/etc/postfix/header_checks &lt; /etc/postfix/header_checks
+# 重新让 Postfix 新 header_checks 生效
+
+# mailq | grep "xxx@abc.com" | cut -d " " -f1 | cut -d'*' -f1 | postsuper -d -
+# 删掉所有来自xxx@abc.com的MailQ
 </code></pre>
 </div>
 
@@ -136,12 +185,12 @@ ccc
   
 
 
-<time datetime="2012-11-05T17:00:00+08:00" pubdate data-updated="true">Nov 5<span>th</span>, 2012</time>
+<time datetime="2013-01-15T14:56:00+08:00" pubdate data-updated="true">Jan 15<span>th</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/vim/'>vim</a>
+    <a class='category' href='/blog/categories/linux/'>linux</a>
   
 </span>
 
@@ -150,7 +199,7 @@ ccc
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2013/01/15/postfix-mailq-cao-zuo/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2013/01/15/postfix-mailq-cao-zuo/" >Tweet</a>
   
   
   <div class="g-plusone" data-size="medium"></div>
@@ -163,10 +212,10 @@ ccc
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2012/11/03/skip-vadation-or-skip-flilter/" title="Previous Post: skip vadation or skip flilter">&laquo; skip vadation or skip flilter</a>
+        <a class="basic-alignment left" href="/blog/2013/01/13/about-mail-server/" title="Previous Post: about Mail Server">&laquo; about Mail Server</a>
       
       
-        <a class="basic-alignment right" href="/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/" title="Next Post: How to integrate mmseg with elasticsearch">How to integrate mmseg with elasticsearch &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2013/01/15/configure-php-plus-nginx/" title="Next Post: configure php + nginx ">configure php + nginx  &raquo;</a>
       
     </p>
   </footer>
@@ -258,8 +307,8 @@ ccc
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/';
-        var disqus_url = 'http://dexterdeng.github.com/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/';
+        var disqus_identifier = 'http://dexterdeng.github.com/blog/2013/01/15/postfix-mailq-cao-zuo/';
+        var disqus_url = 'http://dexterdeng.github.com/blog/2013/01/15/postfix-mailq-cao-zuo/';
         var disqus_script = 'embed.js';
       
     (function () {
