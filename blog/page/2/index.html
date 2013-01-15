@@ -9,7 +9,10 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="run all validation and filters @user.save run no validation but all filters @user.save(false) run no validation and no filters @user.send(: &hellip;">
+  <meta name="description" content="How to replace , with enter e.g. How to replace aaa,bbb,ccc with aaa
+bbb
+ccc open it with mvim :%s/,/^M/g
+# you need to type CTRL-V &lt;CR&gt; to get &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +69,60 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/11/05/delete-blank-lines-and-replace-with-enter/">Delete Blank Lines and Replace With Enter</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-05T17:00:00+08:00" pubdate data-updated="true">Nov 5<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h3>How to replace , with enter</h3>
+
+<p>e.g. How to replace <code>aaa,bbb,ccc</code> with</p>
+
+<pre><code>aaa
+bbb
+ccc
+</code></pre>
+
+<p>open it with <code>mvim</code></p>
+
+<pre><code>:%s/,/^M/g
+# you need to type CTRL-V &lt;CR&gt; to get a ^M here
+</code></pre>
+
+<h3>How to remove blank lines</h3>
+
+<pre><code>:%g/^\s*$/d
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -735,6 +792,10 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/01/15/systembei-wang-lu/">system备忘录</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/01/15/install-tivoli/">install tivoli</a>
       </li>
     
@@ -748,10 +809,6 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
     
       <li class="post">
         <a href="/blog/2013/01/13/about-mail-server/">about Mail Server</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/07/setup-new-environment/">setup new environment</a>
       </li>
     
   </ul>

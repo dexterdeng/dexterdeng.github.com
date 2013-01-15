@@ -4,7 +4,7 @@
   <title><![CDATA[Category: linux | 脑波网]]></title>
   <link href="http://dexterdeng.github.com/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2013-01-15T15:23:10+08:00</updated>
+  <updated>2013-01-15T15:28:42+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,29 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[system备忘录]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/15/systembei-wang-lu/"/>
+    <updated>2013-01-15T15:24:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/15/systembei-wang-lu</id>
+    <content type="html"><![CDATA[<ul>
+<li>要想fb功能work， 需要确保认证的cacert.pem 在/public/</li>
+<li><p>以下配置需要视具体情况变更</p>
+
+<p>ENV["MAGICK_CODER_MODULE_PATH"]="/usr/lib64/ImageMagick-6.7.0/modules-Q16/coders/"
+ENV["GS_FONTPATH"] = "/usr/share/ghostscript/fonts"</p>
+
+<h1>ENV["MAGICK_CONFIGURE_PATH"]="/usr/local/lib/ImageMagick-6.6.3/config"</h1>
+
+<p>ENV["GS_LIB"] = "/usr/share/ghostscript/fonts"</p>
+
+<p>Paperclip.options[:command_path] = "/usr/bin"
+Paperclip.options[:swallow_stderr] = false</p></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[install tivoli]]></title>
@@ -332,92 +355,6 @@ Grep NOT
 <pre><code>$ egrep 'Manager|Developer' employee.txt | grep -v Sales
 200  Jason   Developer  Technology  $5,500
 400  Nisha   Manager    Marketing   $9,500
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[add user to group]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/"/>
-    <updated>2012-10-30T16:55:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group</id>
-    <content type="html"><![CDATA[<p>How can I add a user to a group under Linux operating system?</p>
-
-<p>You can use the useradd or usermod commands to add a user to a group. The useradd command creates a new user or update default new user information. The usermod command modifies a user account i.e. it is useful to add user to existing group. There are two types of group. First is primary user group and other is secondary group. All user account related information is stored in <code>/etc/passwd</code>, <code>/etc/shadow</code> and <code>/etc/group</code> files to store user information.</p>
-
-<h3>useradd Example - Add A New User To Secondary Group</h3>
-
-<p>You need to the useradd command to add new users to existing group (or create a new group and then add user). If group does not exist, create it. The syntax is as follows:</p>
-
-<pre><code>useradd -G {group-name} username
-</code></pre>
-
-<p>In this example, create a new user called vivek and add it to group called developers. First login as a root user (make sure group developers exists), enter:</p>
-
-<pre><code># grep developers /etc/group
-</code></pre>
-
-<p>Output:</p>
-
-<pre><code>developers:x:1124:
-</code></pre>
-
-<p>If you do not see any output then you need to add group developers using groupadd command:</p>
-
-<pre><code># groupadd developers
-</code></pre>
-
-<p>Next, add a user called vivek to group developers:</p>
-
-<pre><code># useradd -G developers vivek
-</code></pre>
-
-<p>Setup password for user vivek:</p>
-
-<pre><code># passwd vivek
-</code></pre>
-
-<p>Ensure that user added properly to group developers:</p>
-
-<pre><code># id vivek
-</code></pre>
-
-<p>Output:</p>
-
-<pre><code>uid=1122(vivek) gid=1125(vivek) groups=1125(vivek),1124(developers)
-</code></pre>
-
-<p>Please note that capital <code>G (-G)</code> option add user to a list of supplementary groups. Each group is separated from the next by a comma, with no intervening whitespace. For example, add user jerry to groups admins, ftp, www, and developers, enter:</p>
-
-<pre><code># useradd -G admins,ftp,www,developers jerry
-</code></pre>
-
-<h3>useradd example - Add a new user to primary group</h3>
-
-<p>To add a user tony to group developers use following command:</p>
-
-<pre><code># useradd -g developers tony
-# id tony
-</code></pre>
-
-<p>Sample outputs:</p>
-
-<pre><code>uid=1123(tony) gid=1124(developers) groups=1124(developers)
-</code></pre>
-
-<p>Please note that small -g option add user to initial login group (primary group). The group name must exist. A group number must refer to an already existing group.</p>
-
-<pre><code>usermod example - Add a existing user to existing group
-</code></pre>
-
-<p>Add existing user tony to ftp supplementary/secondary group with usermod command using -a option ~ i.e. add the user to the supplemental group(s). Use only with -G option :</p>
-
-<pre><code># usermod -a -G ftp tony
-</code></pre>
-
-<p>Change existing user tony primary group to www:</p>
-
-<pre><code># usermod -g www tony
 </code></pre>
 ]]></content>
   </entry>
