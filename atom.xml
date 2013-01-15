@@ -4,7 +4,7 @@
   <title><![CDATA[脑波网]]></title>
   <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2013-01-13T23:12:18+08:00</updated>
+  <updated>2013-01-15T13:50:28+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -152,7 +152,7 @@ chmod -R go-wrx /etc/opendkim/keys
 <p>Create your keys with:</p>
 
 <pre><code>mkdir /etc/opendkim/keys/tiaoboo.com
-/usr/local/sbin/opendkim-genkey -D /etc/opendkim/keys/tiaoboo.com/ -d tiaoboo.com -s default
+/usr/sbin/opendkim-genkey -D /etc/opendkim/keys/tiaoboo.com/ -d tiaoboo.com -s default
 chown -R opendkim:opendkim /etc/opendkim/keys/tiaoboo.com
 mv /etc/opendkim/keys/tiaoboo.com/default.private /etc/opendkim/keys/tiaoboo.com/default
 </code></pre>
@@ -200,7 +200,7 @@ UserID                  opendkim:opendkim
 
 <p>Next, you’ll need to create the three text files that you just mentioned in your config file. First, using your favorite text editor, create an <code>/etc/opendkim/KeyTable</code> file that looks like this:</p>
 
-<pre><code>default._domainkey.tiaoboo.com example.com:default:/etc/opendkim/keys/tiaoboo.com/default
+<pre><code>default._domainkey.tiaoboo.com tiaoboo.com:default:/etc/opendkim/keys/tiaoboo.com/default
 </code></pre>
 
 <p>The <code>KeyTable</code> file tells <code>OpenDKIM</code> where to find your keys. Each entry in the  <code>KeyTable</code> file is a single line for each key location</p>
@@ -510,7 +510,7 @@ non_smtpd_milters = inet:localhost:10035, inet:localhost:8891
 
 <p>First, you need to add a TXT Record to your zone file that reads:</p>
 
-<pre><code>_domainkey.example.com IN TXT "t=y; o=~"
+<pre><code>_domainkey.tiaoboo.com IN TXT "t=y; o=~"
 </code></pre>
 
 <p>The <em>domainkey TXT record is slightly comparable to the </em>adsp TXT record you added when setting up DKIM. It basically publishes your DomainKeys policies. The t=y means the domain is in test mode, so only use this setting while you’re testing things out. Once you’ve verified it works, remember to change it to t=n. The o=~ means that some emails from this domain will be signed, but not all. A setting of o=- means that every email from this domain will be signed, and that a messages origin should be in doubt if it comes from this domain unsigned. For now, the safest setting is o=~.</p>
@@ -563,6 +563,99 @@ SpamAssassin check: ham
 </code></pre>
 
 <p>If you get that result, then congratulations – you’re signing mail with DKIM and DomainKeys. Sure, it’s a little redundant, but apparently overkill is just your style.</p>
+
+<h3>SPF</h3>
+
+<p>当服务器接收到邮件时会检查域名的SPF记录与客户端IP是否匹配，如匹配就被认为是真实的邮件，不匹配就被认为是假冒的邮件，当然如果对方域名未做SPF记录会被误报。
+安装postfix-policyd-spf-perl用以检查域SPF记录并匹配：</p>
+
+<pre><code>yum install perl-Mail-SPF perl-Sys-Hostname-Long
+wget https://launchpad.net/postfix-policyd-spf-perl/trunk/release2.010/+download/postfix-policyd-spf-perl-2.010.tar.gz
+tar zxvf postfix-policyd-spf-perl-2.010.tar.gz 
+mv postfix-policyd-spf-perl-2.010/postfix-policyd-spf-perl /usr/sbin/
+chmod +x /usr/sbin/postfix-policyd-spf-perl
+</code></pre>
+
+<p>开启postfix-policyd-spf-perl服务：</p>
+
+<pre><code>cat /etc/postfix/master.cf
+policy-spf  unix  -       n       n       -       -       spawn
+ user=nobody argv=/usr/sbin/postfix-policyd-spf-perl
+</code></pre>
+
+<p>编辑Postfix主配置文件添加SPF过滤规则：</p>
+
+<pre><code>#cat /etc/postfix/main.cf
+smtpd_recipient_restrictions =
+permit_mynetworks,
+permit_sasl_authenticated,
+reject_unauth_destination,
+#reject_unknown_client,
+check_policy_service unix:private/policy-spf
+</code></pre>
+
+<p>重新加载Postfix配置文件：</p>
+
+<p>/etc/init.d/postfix reload</p>
+
+<p>测试SPF效果：</p>
+
+<pre><code>#下为错误
+postfix/policy-spf[15857]: Policy action=PREPEND Received-SPF: softfail (onovps.com: Sender is not authorized by default
+#下为正确
+postfix/policy-spf[15726]: Policy action=PREPEND Received-SPF: pass (qq.com: Sender is authorized to use 'qq@qq.com'
+</code></pre>
+
+<p>Policy-spy默认不阻止验证失败的发件人邮件，会在邮件头部添加Received-SPF: softfail标签，如果要对其处理可使用Postfix过滤规则header_checks进行匹配操作。
+添加header_checks匹配规则：</p>
+
+<pre><code>#cat /etc/postfix/header_checks 
+</code></pre>
+
+<p>编辑主Postfix主配置文件应用此规则：</p>
+
+<pre><code>#cat main.cf
+header_checks = pcre:/etc/postfix/header_checks
+</code></pre>
+
+<h4>编辑DNS</h4>
+
+<pre><code>_spf.tiaoboo.com
+ip4:66.135.35.84
+default._domainkey.tiaoboo.com
+v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFkbFiloMnbWBkt/Q9dVTLAqcr536yJj7jmdyZVoMNJXHZrio78OFnGxCGjbJm3iPZ07YXhjhP0YIYi4SdpQD5w8JIB7vrArWLwwJnyL3IsiYrhoiaMFWJRpjnhSf16l/IcoO3+s8HRJOzQrw5HJsNM9KbnOxodYTew+lC4OqZgQIDAQAB     1800 
+tiaoboo.com "v=spf1 a mx include:_spf.tiaoboo.com include:_spf.google.com" ~all 600   # the a is important  
+tiaoboo.com "google-site-verification=qttqrxdf9j3-h1f2srpiszt1w9giqqygwaflyhleg4q"
+</code></pre>
+
+<h4>How to switch domain?</h4>
+
+<ul>
+<li><p>edit main.cf, replace all the tiaoboo.com to blabla.net</p></li>
+<li><p>generate opendkim keys</p>
+
+<p>mkdir /etc/opendkim/keys/blabla.net
+/usr/local/sbin/opendkim-genkey -D /etc/opendkim/keys/blabla.net/ -d blabla.net -s default
+chown -R opendkim:opendkim /etc/opendkim/keys/tiaoboo.net
+mv /etc/opendkim/keys/tiaoboo.com/default.private /etc/opendkim/keys/tiaoboo.com/default</p></li>
+<li><p>Edit <code>/etc/opendkim/SigningTable</code></p>
+
+<p>*@blabla.net default._domainkey.blabla.net</p></li>
+<li><p>Edit <code>/etc/opendkim/TrustedHosts</code></p>
+
+<p>127.0.0.1/8
+tiaoboo.com
+blabla.net</p></li>
+<li><p>Add DNS file</p>
+
+<p><em>adsp.</em>domainkey.blabla.com    IN    TXT    &#8220;dkim=unknown&#8221; 3600
+<em>domainkey.blabla.com          IN    TXT    &#8220;o=~;*         3600
+</em>spf.blabla.com                IN    TXT    &#8220;ip4:66.135.35.84&#8221;  600
+default._domainkey.blabla.com  IN    TXT    &#8220;v=DKIM1; k=rsa;
+p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFkbFiloMnbWBkt/Q9dVTLAqcr536yJj7jmdyZVoMNJXHZrio78OFnGxCGjbJm3iPZ07YXhjhP0YIYi4SdpQD5w8JIB7vrArWLwwJnyL3IsiYrhoiaMFWJRpjnhSf16l/IcoO3+s8HRJOzQrw5HJsNM9KbnOxodYTew+lC4OqZgQIDAQAB&#8221;  1800</p></li>
+<li><p> restart dk-mailter, opendkim, postfix</p></li>
+</ul>
+
 ]]></content>
   </entry>
   
