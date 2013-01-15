@@ -4,7 +4,7 @@
   <title><![CDATA[Category: linux | 脑波网]]></title>
   <link href="http://dexterdeng.github.com/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2013-01-15T15:28:42+08:00</updated>
+  <updated>2013-01-15T17:42:21+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -22,8 +22,9 @@
 <li>要想fb功能work， 需要确保认证的cacert.pem 在/public/</li>
 <li><p>以下配置需要视具体情况变更</p>
 
-<p>ENV["MAGICK_CODER_MODULE_PATH"]="/usr/lib64/ImageMagick-6.7.0/modules-Q16/coders/"
-ENV["GS_FONTPATH"] = "/usr/share/ghostscript/fonts"</p>
+<p>ENV["MAGICK_CODER_MODULE_PATH"]="/usr/lib64/ImageMagick-6.7.0/modules-Q16/coders/"</p>
+
+<p>ENV["GS_FONTPATH"] = "/usr/share/ghostscript/fonts"</p>
 
 <h1>ENV["MAGICK_CONFIGURE_PATH"]="/usr/local/lib/ImageMagick-6.6.3/config"</h1>
 

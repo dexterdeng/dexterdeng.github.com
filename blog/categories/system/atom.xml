@@ -4,7 +4,7 @@
   <title><![CDATA[Category: system | 脑波网]]></title>
   <link href="http://dexterdeng.github.com/blog/categories/system/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2013-01-15T15:28:42+08:00</updated>
+  <updated>2013-01-15T17:42:21+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -656,6 +656,21 @@ p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFkbFiloMnbWBkt/Q9dVTLAqcr536yJj7jmdyZVo
 <li><p> restart dk-mailter, opendkim, postfix</p></li>
 </ul>
 
+
+<h4>Issue fixing###</h4>
+
+<ul>
+<li><p>X-Authentication-Warning</p>
+
+<p>X-Authentication-Warning: server1.mysite.com: apache set sender to webmaster@mysite.com using -f
+X-Authentication-Warning: server1.mysite.com: apache set sender to webmaster@mysite.com using -f
+X-Authentication-Warning: p3100221.pubip.serverbeach.com: nginx set sender to noreply@blani.net using -f</p></li>
+</ul>
+
+
+<p>Solution:</p>
+
+<p>   Add apache or nginx to <code>/etc/mail/trusted-users</code></p>
 ]]></content>
   </entry>
   

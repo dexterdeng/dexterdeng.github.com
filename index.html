@@ -100,8 +100,9 @@
 <li>要想fb功能work， 需要确保认证的cacert.pem 在/public/</li>
 <li><p>以下配置需要视具体情况变更</p>
 
-<p>ENV[&#8220;MAGICK_CODER_MODULE_PATH&#8221;]=&#8221;/usr/lib64/ImageMagick-6.7.0/modules-Q16/coders/&#8221;
-ENV[&#8220;GS_FONTPATH&#8221;] = &#8220;/usr/share/ghostscript/fonts&#8221;</p>
+<p>ENV[&#8220;MAGICK_CODER_MODULE_PATH&#8221;]=&#8221;/usr/lib64/ImageMagick-6.7.0/modules-Q16/coders/&#8221;</p>
+
+<p>ENV[&#8220;GS_FONTPATH&#8221;] = &#8220;/usr/share/ghostscript/fonts&#8221;</p>
 
 <h1>ENV[&#8220;MAGICK_CONFIGURE_PATH&#8221;]=&#8221;/usr/local/lib/ImageMagick-6.6.3/config&#8221;</h1>
 
@@ -1036,6 +1037,21 @@ p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFkbFiloMnbWBkt/Q9dVTLAqcr536yJj7jmdyZVo
 <li><p> restart dk-mailter, opendkim, postfix</p></li>
 </ul>
 
+
+<h4>Issue fixing###</h4>
+
+<ul>
+<li><p>X-Authentication-Warning</p>
+
+<p>X-Authentication-Warning: server1.mysite.com: apache set sender to webmaster@mysite.com using -f
+X-Authentication-Warning: server1.mysite.com: apache set sender to webmaster@mysite.com using -f
+X-Authentication-Warning: p3100221.pubip.serverbeach.com: nginx set sender to noreply@blani.net using -f</p></li>
+</ul>
+
+
+<p>Solution:</p>
+
+<p>   Add apache or nginx to <code>/etc/mail/trusted-users</code></p>
 </div>
   
   
