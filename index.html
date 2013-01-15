@@ -1052,6 +1052,18 @@ X-Authentication-Warning: p3100221.pubip.serverbeach.com: nginx set sender to no
 <p>Solution:</p>
 
 <p>   Add apache or nginx to <code>/etc/mail/trusted-users</code></p>
+
+<ul>
+<li><p>Email issue, can&#8217;t open admin.</p>
+
+<p>[15-Jan-2013 09:52:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /var/www/php/wordpress/wp-content/themes/Blanee/functions.php:52) in /var/www/php/wordpress/wp-content/plugins/nginx-compatibility/nginx-compatibility.php on line 69</p></li>
+</ul>
+
+
+<p>Solution:</p>
+
+<pre><code>there is a space at the end of /var/www/php/wordpress/wp-content/themes/Blanee/functions.php, remove it and it works.:
+</code></pre>
 </div>
   
   
