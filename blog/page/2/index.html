@@ -9,7 +9,9 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="流量刚过15k，一个新的里程碑 坚持做两年的项目， 流量上了一个新阶段。 很多问题随之产生， 这里就最近的一些经验。稍微总结一下。 数据库session表超大，导致dump文件超大，11G 最近数据库dump文件超大，一直欣慰的以为数据量大了，实则可笑至极。 在解决这个问题过程中， 我找到几个方案 &hellip;">
+  <meta name="description" content="[mysqld]
+port = 3306
+serverid = 1 socket = /tmp/mysql.sock skip-name-resolve 禁止MySQL对外部连接进行DNS解析，使用这一选项可以消除MySQL进行DNS解析的时间。但需要注意，如果开启该选项， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,90 +68,6 @@
     <div id="content">
       <div class="blog-index">
   
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/01/07/%5B%3F%5D-dian-jing-yan-jiao-xun/">一点经验教训</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-01-07T12:27:00+08:00" pubdate data-updated="true">Jan 7<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h3>流量刚过15k，一个新的里程碑</h3>
-
-<p>坚持做两年的项目， 流量上了一个新阶段。</p>
-
-<p>很多问题随之产生， 这里就最近的一些经验。稍微总结一下。</p>
-
-<h3>数据库session表超大，导致dump文件超大，11G</h3>
-
-<p>最近数据库dump文件超大，一直欣慰的以为数据量大了，实则可笑至极。</p>
-
-<p>在解决这个问题过程中， 我找到几个方案。</p>
-
-<h4>数据量真的庞大</h4>
-
-<p>对数据做partition, 这样数据库更稳定。</p>
-
-<h4>有很庞大的表</h4>
-
-<p>如果数据不是很有价值，那么应该删除过期数据。
-如果数据很有价值，那么应该分表了。</p>
-
-<h3>Perconas是个好东西， 更省cpu</h3>
-
-<p>以后有机会，要换这个数据库。</p>
-
-<h3>数据库恢复时，手动restore 了一些表，</h3>
-
-<p>发现一下行其实是有作用的，否则容易出现法语乱码:</p>
-
-<blockquote><p>&#8211; MySQL dump 10.11
-  &#8211;
-  &#8211; Host: localhost    Database: blabla</p>
-
-<hr />
-
-<p>  &#8211; Server version5.0.92-log</p>
-
-<p>/<em>!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT </em>/;
-  /<em>!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS </em>/;
-  /<em>!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION </em>/;
-  /<em>!40101 SET NAMES utf8 </em>/;
-  /<em>!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE </em>/;
-  /<em>!40103 SET TIME_ZONE=&#8217;+00:00&#8217; </em>/;
-  /<em>!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 </em>/;
-  /<em>!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS,
-  FOREIGN_KEY_CHECKS=0 </em>/;
-  /<em>!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE=&#8217;NO_AUTO_VALUE_ON_ZERO&#8217;
-  </em>/;
-  /<em>!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 </em>/;</p></blockquote>
-</div>
-  
-  
-
-
-    </article>
   
   
     <article>
@@ -1192,6 +1110,55 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
 
     </article>
   
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/">MySQL &#8216;Incorrect Key File for Table&#8217; Error</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-10-30T02:47:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>When saving a record to a MySQL table the other day I got the error message &#8220;Incorrect key file for table &#8216;mytable&#8217;; try to repair it&#8221;. I am uncertain why the error occured and how to ensure it doesn&#8217;t happen again in the future but a quick fix for the time being is simple.</p>
+
+<h2>How to repair a MySQL table</h2>
+
+<p>All you need to do is to repair the table by running the following SQL command, where &#8220;mytable&#8221; is the name of the table that gave the error:</p>
+
+<pre><code>REPAIR TABLE `mytable`;
+</code></pre>
+
+<p>You can run this from e.g. the MySQL CLI or phpMyAdmin. From phpMyAdmin select the table, then &#8220;Operations&#8221; from the navigation tabs in the right frame above the table info; then &#8220;Repair Table&#8221; from the &#8220;Table maintenance&#8221; options at the bottom of the page.</p>
+
+<h2>When the table is /tmp/#sql_xxx_x.MYI</h2>
+
+<p>If the error looks like &#8220;Incorrect key file for table &#8216;/tmp/#sql_xxx_x.MYI&#8217;; try to repair it&#8221; where it refers to a temporary location on the filesystem, it&#8217;s likely you&#8217;ve run out of diskspace. Read my follow up post for more information.</p>
+</div>
+  
+  
+
+
+    </article>
+  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; 更早</a>
@@ -1213,10 +1180,6 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
       </li>
     
       <li class="post">
-        <a href="/blog/2013/01/18/wo-da-suan-shang-lu-liao/">我打算上路了</a>
-      </li>
-    
-      <li class="post">
         <a href="/blog/2013/01/16/install-hudson/">install hudson</a>
       </li>
     
@@ -1226,6 +1189,10 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
     
       <li class="post">
         <a href="/blog/2013/01/15/systembei-wang-lu/">system备忘录</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/15/install-tivoli/">install tivoli</a>
       </li>
     
   </ul>
