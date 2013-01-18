@@ -4,7 +4,7 @@
   <title><![CDATA[脑波网]]></title>
   <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2013-01-15T17:58:27+08:00</updated>
+  <updated>2013-01-18T18:01:02+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,283 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[crontab issues with rvm ]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/18/crontab-issues-with-rvm/"/>
+    <updated>2013-01-18T17:45:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/18/crontab-issues-with-rvm</id>
+    <content type="html"><![CDATA[<p>I encountered these issues today.</p>
+
+<ol>
+<li>I can&#8217;t set default rvm to different users. like hudson and nginx.</li>
+</ol>
+
+
+<p>solution:</p>
+
+<pre><code>PATH=/usr/kerberos/sbin:/usr/local/rvm/gems/ree-1.8.7-2011.03/bin:/usr/local/rvm/gems/ree-1.8.7-2011.03@global/bin:/usr/local/rvm/rubies/ree-1.8.7-2011.03/bin:/usr/local/rvm/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/blabla/bin
+[[ -s "/usr/local/rvm/scripts/rvm" ]] &amp;&amp; . "/usr/local/rvm/scripts/rvm" # Load RVM function
+rvm ree-1.8.7-2011.03 --default
+</code></pre>
+
+<ol>
+<li><p>after I did #1, I encountered another issue. nginx user can&#8217;t run
+crontab -l or crontab -l. it spotted  something like that:</p>
+
+<p> user (nginx) are not allowed to access to (crontab) because of pam configuration</p></li>
+</ol>
+
+
+<p>solution:</p>
+
+<pre><code>#
+# The PAM configuration file for the cron daemon
+#
+#
+#auth      sufficient pam_env.so          # Comment that line
+#auth       required   pam_rootok.so    # Comment that line
+
+auth       sufficient pam_rootok.so       # Add that line
+auth       required   pam_env.so        # Add that line
+
+auth       include    system-auth
+account    required   pam_access.so
+account    include    system-auth
+session    required   pam_loginuid.so
+session    include    system-auth
+</code></pre>
+
+<p>   and then, I can run crontab -e now.</p>
+
+<ol>
+<li>nginx can&#8217;t use rvm stuff.</li>
+</ol>
+
+
+<p>solution.</p>
+
+<pre><code>/usr/local/rvm/bin/rake-ree-1.8.7-2011.03 can run the rake tasks directly
+</code></pre>
+
+<p>  I added a task to edit crontab  , replace <code>/usr/bin/env ruby</code> with <code>/usr/local/rvm/bin/rake-ree-1.8.7-2011.03</code></p>
+
+<pre><code>desc "correct crontab "
+task :cron =&gt; :environment do
+  oc = `crontab -l`
+  #nrake = "/Users/mac/.rbenv/shims/rake"
+  nrake = "/usr/local/rvm/bin/rake-ree-1.8.7-2011.03"
+  oc = oc.split("\n").map{|l|
+    l.gsub("/usr/bin/env rake", nrake)
+  }
+  cf = File.new("#{RAILS_ROOT}/tmp/nc.txt", "w")
+  cf.puts oc.join("\n")
+  cf.close
+
+  `crontab &lt; #{RAILS_ROOT}/tmp/nc.txt`
+end
+</code></pre>
+
+<p>  and then , I add this to deploy script.</p>
+
+<pre><code>namespace :deploy do
+desc "Update the crontab file"
+  task :update_crontab, :roles =&gt; :db do
+    run "cd #{release_path} &amp;&amp; whenever --update-crontab #{application} &amp;&amp; rake sys:cron RAILS_ENV=production"
+  end
+end 
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[我打算上路了]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/18/wo-da-suan-shang-lu-liao/"/>
+    <updated>2013-01-18T03:43:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/18/wo-da-suan-shang-lu-liao</id>
+    <content type="html"><![CDATA[<p>这次我等婚姻真的出现最难的一关。
+这些年，不知道我是怎么混过来的。我完全得不到最终，而我的家人也受牵连。
+即使我在努力， 也都是<code>自私鬼</code>.</p>
+
+<p>我不想抱怨，起码这几年我，我很失败。事业，家庭双重失败。</p>
+
+<p>我还是太嫩了。 我也不想。 我完全没能力做好一个好丈夫， 一个好父亲。
+我不想解释什么，反正我都是错的。</p>
+
+<p>我需要思考人生，我需要历经磨难，
+老天觉得我不该拥有这一切，所有，一而再再而三向我发难。</p>
+
+<p>这个世界上，我最对不起的是我等老父亲老母亲。 我没给你们一天享清福，
+我也没有孝敬过你什么。 而你们奉献了所有。
+自古以来的孝道，我一点也没有做好。 但今后，我一定回补偿的，
+不是立刻，马上。 也是以后， 但我心里永远记着。我会做的</p>
+
+<p>我第二对不起的是我可爱又可怜的坤坤，当初，你还在娘胎里，我就预感到我们婚姻会很不幸，几乎差点就把你扼杀掉了。可是你真的很争气，你很聪明，很懂事，学的快。可是我又能给你做什么呢。 我都没有做好，让你也受牵连， 以后我会补偿你。</p>
+
+<p>第三，我对不起的就是我可怜的老婆。 恋爱到结婚， 我们走过快10年，
+我没有给你过上富足的日子。但在当下这个现状。起码我们也比80％的中国人过的好了，生活是一种心态，如果你心态好，
+我们完全是处处和谐。 我们家完全不会有人受欺负。
+当然，你一直都高高在上，欺负和蔑视一切人，我压力很大。
+我做不好，这10年，你得青春年华，最黄金的时间，浪费再了我的身上，但谁又能保证你不会碰到一个逼我还混还差的混蛋呢？当初我看起来也算是一表人才。
+人都是走一步，爬一步，才会发现原来可以这样。
+和两年前相比，你不觉得野心，视野大了很大。
+我永远满足不了你得期望，我从来在你眼里都是个瘪三。
+你自以为可以我行我素，自命清高，关键时候，还是听信旁人的话。
+结婚的时候， 我们就已种下了祸根。人应该有完整的人格，生活也不是工作，
+家庭不要不是办公室。 你也不是其他所有人的上司。 随意骂人那时旧社会。
+你完全不懂夫妻相处之道，这一次你明明都已经明白怎么回事，还是要穷根究底。当然是我做了，但也是一点点隐私。
+至少也不是什么道德问题。我都求你了，你依然不放过。 对的，是我错了。
+我们之间，积累的种种， 已经差劲到了极点。 我的家人，
+你对他们甚至连厌恶都懒得有。 在你眼里，他们属于社会上最丑恶的人。
+我在你眼里，是个自私， 无耻到了极点的人。
+我们肯定有问题。但是，能变成这样， 我觉得你看事物的角度有一点问题。</p>
+
+<p>我觉得，能闹成这样， 还都是因为一个穷字。</p>
+
+<p>因为穷，
+长辈在你眼里也只是年龄稍大的大爷大妈；</p>
+
+<p>因为穷，
+我们得罪了你们家里所有关键人物。</p>
+
+<p>因为穷，
+到今天，我没有一点私人财产，甚至，一直都欠着银行的钱，尽管我收入相当也不差。</p>
+
+<p>因为穷，
+我说一百句，抵不上水果摊，或者公交车上人随便的一句话。</p>
+
+<p>其实我要求很的，大家都随便一点，轻松一点，
+对我家人即使你不喜欢，也不要去讨厌他们。 即使不接纳，也不要去诋毁他们。
+对我，10次做错了能少马一次。 稍微留点零花钱，
+尊重一点我都看法，即使说错了也不要谴责我， 留一点秘密，
+因为这点秘密可能也是我自卑的地方。这叫隐私。</p>
+
+<p>好了， 我说了这么多，后面的篇幅有点长，而且变成了好笑指责我老婆的文章。
+未免太小家子气。写了就写了，反正我也不是什么好东西。
+尽管我从来不害人，有时候还做一点点慈善。</p>
+
+<p>继续反思。</p>
+
+<p>男人身上的担子是比较重，
+很多时候，我的确没有意识到有些事情应该是我的责任。 应该主动承担起来。
+而且很多琐碎小事，即使被提醒无数遍，也一样不会放在心上，这也是我长久以来，
+一直被骂的一个重要原因。</p>
+
+<p>我很多事情都不在乎， 买差了东西，
+做错了事，只要能修补，我下次还会在重复同样的问题。
+不过，我对生活的要求的确不高。  这里也有另外一条结论，
+任何时候，不要以为你的弱项一点会被对方的强项互补，很有可能，
+对方因为你得弱项，而放弃自己的强项。 或者抵制而不共享强项带来的号称。</p>
+
+<p>我认为生活就是过得去，然后再加上几个认真的理想，就精彩了。
+我都理想就是我吹过的牛，什么三十岁，四十岁之类的。
+别人说是吹牛，我自己说是理想， 结果现状我自己也愿意承认这时吹牛。
+不过好在我还在坚持，
+换过来，如果别人认为是理想，而我自己认为是吹牛， 那么结果回事怎样呢？
+我想我也会当成理想。
+在进一步， 如果别人合我都认为是理想， 会不会引起共振和火花呢。</p>
+
+<p>再谈谈吹牛， 其实没次我吹牛，我都是很认真的。 重要的事，我都行动了。
+没有任何一件事，我说过，而不努力苦等的。</p>
+
+<p>实际上，这个社会上还是“别人”多。 如果有第三类人， 那一点是最好的朋友。
+或者最好的伙伴。</p>
+
+<p>“自私”？ 其实我决定我还真挺无私的，不过我一点都不伟大。
+我也要一点私人空间，和私人资源。结果已经很明显了</p>
+
+<p>我还是不够努力， 虽然我工作的时间每天都大概有16小时。
+但是不是所有时间效率都很高， 很多时候，我也会边听听音乐，看看电影。
+不过我都生活本来就枯燥，如果我能忍受这么长时间工作而不调剂一下，相信我一定是一个很无趣的人。
+但一定要有意识提高高效率的时长。要知道时间就是钱。</p>
+
+<p>对老婆孩子，对父母，多一些关爱。 还不是穷嘛。</p>
+
+<p>如今我的生活， 到了一个十字路口，
+我们真的不适合在一起生活，因为你一辈子也不会感到幸福。当你扫一眼的时候，你已经轻松的跳过了我。</p>
+
+<p>今年过年，我不想回去了。 我想在路上过。 对不起了，你们所有人。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[install hudson]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/16/install-hudson/"/>
+    <updated>2013-01-16T16:58:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/16/install-hudson</id>
+    <content type="html"><![CDATA[<h4>亲信官方文档， 导致错误</h4>
+
+<p>官方这么说： http://wiki.hudson-ci.org/display/HUDSON/Installing+Hudson+using+RPM+repository</p>
+
+<pre><code>Installation
+sudo wget -O /etc/yum.repos.d/hudson.repo http://hudson-ci.org/redhat/hudson.repo
+sudo yum check-update
+sudo yum install hudson
+</code></pre>
+
+<p>错！</p>
+
+<p>第一行命令执行完， 得到一下结果：</p>
+
+<pre><code>Loaded plugins: fastestmirror, security
+Loading mirror speeds from cached hostfile
+ * base: dist1.800hosting.com
+ * epel: mirrors.servercentral.net
+ * extras: mirror.rackspace.com
+ * rpmforge: mirror.teklinks.com
+ * updates: mirror.raystedman.net
+hudson/primary_db                                                                                                                                           | 5.0 kB     00:00     
+http://hudson-ci.org/redhat/repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2: [Errno -3] Error performing checksum
+Trying other mirror.
+Error: failure: repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2 from hudson: [Errno 256] No more mirrors to try.
+</code></pre>
+
+<p>无论执行何yum命令，都会出现这个结果。</p>
+
+<p>解决：</p>
+
+<pre><code>rm /etc/yum.repos.d/hudson.repo
+</code></pre>
+
+<p>删掉yum.repos.d里hudson记录即可</p>
+
+<h3>继续，重新开始</h3>
+
+<h4>安装JDK</h4>
+
+<pre><code>yum search java #找到最新，java
+
+yum install java-1.6.0-openjdk.x86_64 java-1.6.0-openjdk-devel.x86_64
+</code></pre>
+
+<h4>安装hudson</h4>
+
+<pre><code>找到http://hudson-ci.org/redhat/RPMS/noarch/ 最新hudson rpm 按住包
+
+wget http://hudson-ci.org/redhat/RPMS/noarch/hudson-3.0.0-1.1.noarch.rpm
+</code></pre>
+
+<p>配置：安装完之后，你可以在/etc/sysconfig/hudson设置启动用户（涉及到执行构建的权限），hudson主目录。</p>
+
+<h4>启动hudson</h4>
+
+<pre><code>/sbin/service hudson start
+</code></pre>
+
+<p>open http://66.135.35.84:8080/
+choose plugins to install and click <code>instann</code></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[网站攻击实例]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/16/wang-zhan-gong-ji-shi-li/"/>
+    <updated>2013-01-16T00:06:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/16/wang-zhan-gong-ji-shi-li</id>
+    <content type="html"><![CDATA[<pre><code>http://dev.blanee.com/recherche?city_id=city_32&amp;loc=Casablanca&amp;query=999999.9+union+all+select+0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536--
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[system备忘录]]></title>
@@ -2041,37 +2318,6 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
 
 <pre><code># usermod -g www tony
 </code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[MySQL 'Incorrect key file for table' error]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/"/>
-    <updated>2012-10-30T02:47:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/10/30/mysql-incorrect-key-file-for-table-error</id>
-    <content type="html"><![CDATA[<p>When saving a record to a MySQL table the other day I got the error message &#8220;Incorrect key file for table &#8216;mytable&#8217;; try to repair it&#8221;. I am uncertain why the error occured and how to ensure it doesn&#8217;t happen again in the future but a quick fix for the time being is simple.</p>
-
-<h2>How to repair a MySQL table</h2>
-
-<p>All you need to do is to repair the table by running the following SQL command, where &#8220;mytable&#8221; is the name of the table that gave the error:</p>
-
-<pre><code>REPAIR TABLE `mytable`;
-</code></pre>
-
-<p>You can run this from e.g. the MySQL CLI or phpMyAdmin. From phpMyAdmin select the table, then &#8220;Operations&#8221; from the navigation tabs in the right frame above the table info; then &#8220;Repair Table&#8221; from the &#8220;Table maintenance&#8221; options at the bottom of the page.</p>
-
-<h2>When the table is /tmp/#sql_xxx_x.MYI</h2>
-
-<p>If the error looks like &#8220;Incorrect key file for table &#8216;/tmp/#sql_xxx_x.MYI&#8217;; try to repair it&#8221; where it refers to a temporary location on the filesystem, it&#8217;s likely you&#8217;ve run out of diskspace. Read my follow up post for more information.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[开博了，记录我的脑波]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/10/23/kai-bo-liao-%2Cji-lu-wo-de-nao-bo-.-./"/>
-    <updated>2012-10-23T16:21:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/10/23/kai-bo-liao-,ji-lu-wo-de-nao-bo-.-.</id>
-    <content type="html"><![CDATA[<p>开博了，记录我的脑波。。</p>
 ]]></content>
   </entry>
   

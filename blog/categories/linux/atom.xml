@@ -4,7 +4,7 @@
   <title><![CDATA[Category: linux | 脑波网]]></title>
   <link href="http://dexterdeng.github.com/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2013-01-15T17:58:27+08:00</updated>
+  <updated>2013-01-18T18:01:02+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,173 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[crontab issues with rvm ]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/18/crontab-issues-with-rvm/"/>
+    <updated>2013-01-18T17:45:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/18/crontab-issues-with-rvm</id>
+    <content type="html"><![CDATA[<p>I encountered these issues today.</p>
+
+<ol>
+<li>I can't set default rvm to different users. like hudson and nginx.</li>
+</ol>
+
+
+<p>solution:</p>
+
+<pre><code>PATH=/usr/kerberos/sbin:/usr/local/rvm/gems/ree-1.8.7-2011.03/bin:/usr/local/rvm/gems/ree-1.8.7-2011.03@global/bin:/usr/local/rvm/rubies/ree-1.8.7-2011.03/bin:/usr/local/rvm/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/blabla/bin
+[[ -s "/usr/local/rvm/scripts/rvm" ]] &amp;&amp; . "/usr/local/rvm/scripts/rvm" # Load RVM function
+rvm ree-1.8.7-2011.03 --default
+</code></pre>
+
+<ol>
+<li><p>after I did #1, I encountered another issue. nginx user can't run
+crontab -l or crontab -l. it spotted  something like that:</p>
+
+<p> user (nginx) are not allowed to access to (crontab) because of pam configuration</p></li>
+</ol>
+
+
+<p>solution:</p>
+
+<pre><code>#
+# The PAM configuration file for the cron daemon
+#
+#
+#auth      sufficient pam_env.so          # Comment that line
+#auth       required   pam_rootok.so    # Comment that line
+
+auth       sufficient pam_rootok.so       # Add that line
+auth       required   pam_env.so        # Add that line
+
+auth       include    system-auth
+account    required   pam_access.so
+account    include    system-auth
+session    required   pam_loginuid.so
+session    include    system-auth
+</code></pre>
+
+<p>   and then, I can run crontab -e now.</p>
+
+<ol>
+<li>nginx can't use rvm stuff.</li>
+</ol>
+
+
+<p>solution.</p>
+
+<pre><code>/usr/local/rvm/bin/rake-ree-1.8.7-2011.03 can run the rake tasks directly
+</code></pre>
+
+<p>  I added a task to edit crontab  , replace <code>/usr/bin/env ruby</code> with <code>/usr/local/rvm/bin/rake-ree-1.8.7-2011.03</code></p>
+
+<pre><code>desc "correct crontab "
+task :cron =&gt; :environment do
+  oc = `crontab -l`
+  #nrake = "/Users/mac/.rbenv/shims/rake"
+  nrake = "/usr/local/rvm/bin/rake-ree-1.8.7-2011.03"
+  oc = oc.split("\n").map{|l|
+    l.gsub("/usr/bin/env rake", nrake)
+  }
+  cf = File.new("#{RAILS_ROOT}/tmp/nc.txt", "w")
+  cf.puts oc.join("\n")
+  cf.close
+
+  `crontab &lt; #{RAILS_ROOT}/tmp/nc.txt`
+end
+</code></pre>
+
+<p>  and then , I add this to deploy script.</p>
+
+<pre><code>namespace :deploy do
+desc "Update the crontab file"
+  task :update_crontab, :roles =&gt; :db do
+    run "cd #{release_path} &amp;&amp; whenever --update-crontab #{application} &amp;&amp; rake sys:cron RAILS_ENV=production"
+  end
+end 
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[install hudson]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/16/install-hudson/"/>
+    <updated>2013-01-16T16:58:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/16/install-hudson</id>
+    <content type="html"><![CDATA[<h4>亲信官方文档， 导致错误</h4>
+
+<p>官方这么说： http://wiki.hudson-ci.org/display/HUDSON/Installing+Hudson+using+RPM+repository</p>
+
+<pre><code>Installation
+sudo wget -O /etc/yum.repos.d/hudson.repo http://hudson-ci.org/redhat/hudson.repo
+sudo yum check-update
+sudo yum install hudson
+</code></pre>
+
+<p>错！</p>
+
+<p>第一行命令执行完， 得到一下结果：</p>
+
+<pre><code>Loaded plugins: fastestmirror, security
+Loading mirror speeds from cached hostfile
+ * base: dist1.800hosting.com
+ * epel: mirrors.servercentral.net
+ * extras: mirror.rackspace.com
+ * rpmforge: mirror.teklinks.com
+ * updates: mirror.raystedman.net
+hudson/primary_db                                                                                                                                           | 5.0 kB     00:00     
+http://hudson-ci.org/redhat/repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2: [Errno -3] Error performing checksum
+Trying other mirror.
+Error: failure: repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2 from hudson: [Errno 256] No more mirrors to try.
+</code></pre>
+
+<p>无论执行何yum命令，都会出现这个结果。</p>
+
+<p>解决：</p>
+
+<pre><code>rm /etc/yum.repos.d/hudson.repo
+</code></pre>
+
+<p>删掉yum.repos.d里hudson记录即可</p>
+
+<h3>继续，重新开始</h3>
+
+<h4>安装JDK</h4>
+
+<pre><code>yum search java #找到最新，java
+
+yum install java-1.6.0-openjdk.x86_64 java-1.6.0-openjdk-devel.x86_64
+</code></pre>
+
+<h4>安装hudson</h4>
+
+<pre><code>找到http://hudson-ci.org/redhat/RPMS/noarch/ 最新hudson rpm 按住包
+
+wget http://hudson-ci.org/redhat/RPMS/noarch/hudson-3.0.0-1.1.noarch.rpm
+</code></pre>
+
+<p>配置：安装完之后，你可以在/etc/sysconfig/hudson设置启动用户（涉及到执行构建的权限），hudson主目录。</p>
+
+<h4>启动hudson</h4>
+
+<pre><code>/sbin/service hudson start
+</code></pre>
+
+<p>open http://66.135.35.84:8080/
+choose plugins to install and click <code>instann</code></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[网站攻击实例]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/16/wang-zhan-gong-ji-shi-li/"/>
+    <updated>2013-01-16T00:06:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/16/wang-zhan-gong-ji-shi-li</id>
+    <content type="html"><![CDATA[<pre><code>http://dev.blanee.com/recherche?city_id=city_32&amp;loc=Casablanca&amp;query=999999.9+union+all+select+0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536--
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[system备忘录]]></title>
@@ -58,304 +225,6 @@ ps aux | grep dsmc
 cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
 cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
 cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[configure php + nginx ]]></title>
-    <link href="http://dexterdeng.github.com/blog/2013/01/15/configure-php-plus-nginx/"/>
-    <updated>2013-01-15T15:06:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2013/01/15/configure-php-plus-nginx</id>
-    <content type="html"><![CDATA[<p>nginx装好后， 开始装php。</p>
-
-<p>记住以下几点：</p>
-
-<ul>
-<li>务必装教新php, 新版稳定版事5.3.30</li>
-<li>php-fpm已加入php核心，安装时注意配置 --enable-fpm</li>
-<li>安装时务必--with-mysql</li>
-<li><p>如果事64位，记住编译时加上 --with-libdir=lib64 ,否则会出现如下问题:</p>
-
-<p>configure:60376: checking for mysql_error in -lmysqlclient
-configure:60395: gcc -o conftest -I/usr/include -g -O2  -Wl,-rpath,/usr/lib/mysql -L/usr/lib/mysql -L/usr/lib  -Wl,-rpath,/usr/kerberos/lib64 -L/usr/kerberos/lib64 -Wl,-rpath,/usr -L/usr conftest.c -lmysqlclient  -lz -lpng -lz -lcurl -lz -lrt -lresolv -lm -ldl -lnsl  -lxml2 -lz -lm -lssl -lcrypto -ldl -lz -lcurl -ldl -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err -lidn -lssl -lcrypto -lz -lxml2 -lz -lm 1>&amp;5
-/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.so when searching for -lmysqlclient
-/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.a when searching for -lmysqlclient
-/usr/bin/ld: cannot find -lmysqlclient
-collect2: ld returned 1 exit status</p></li>
-</ul>
-
-
-<h4>准备</h4>
-
-<pre><code>yum install mysql-devel
-yum install nginx
-chkconfig --levels 235 nginx on
-/etc/init.d/nginx start
-</code></pre>
-
-<h4>安装</h4>
-
-<pre><code># yum install   php-mysql php-gd php-imap php-ldap php-odbc php-pear php-xml php-xmlrpc php-magickwand php-magpierss php-mbstring php-mcrypt php-mssql php-shout php-snmp php-soap php-tidy
-#yum install php-pecl-apc
-
-
-wget http://ca1.php.net/distributions/php-5.3.20.tar.gz
-tar -xzvf php-5.3.20.tar.gz
- ./configure --with-libdir=lib64  --with-mysql   --enable-fpm    --enable-libgcc   --with-openssl --with-zlib
-make
-make install
-
-拷贝配置文件
-
-/etc/init.d/php-fpm stop
-/etc/init.d/php-fpm start
-</code></pre>
-
-<ul>
-<li><p>Then open <code>/etc/php.ini</code> and set <code>cgi.fix_pathinfo=0</code>:</p></li>
-<li><p>you should set date.timezone in /etc/php.ini:</p>
-
-<p>[...]
-[Date]
-; Defines the default timezone used by the date functions
-; http://www.php.net/manual/en/datetime.configuration.php#ini.date.timezone
-date.timezone = "Europe/Berlin"
-[...]</p>
-
-<p>从<code>cat /etc/sysconfig/clock</code>可以查到时区</p></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[postfix mailq 操作]]></title>
-    <link href="http://dexterdeng.github.com/blog/2013/01/15/postfix-mailq-cao-zuo/"/>
-    <updated>2013-01-15T14:56:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2013/01/15/postfix-mailq-cao-zuo</id>
-    <content type="html"><![CDATA[<p>如果你要套用其中一笔Queue 中的邮件，可以先用mailq 或postqueue 指令查询出或筛选出你要重新排Queue 的邮件ID，并使用以下指令重新排Queue：</p>
-
-<pre><code>postsuper -r 7B8CE830BD
-</code></pre>
-
-<p>若要套用「所有」邮件，可以使用特殊的ALL 关键字：</p>
-
-<pre><code>postsuper -r ALL
-</code></pre>
-
-<p>最后再强制重送所有的信件</p>
-
-<pre><code>postqueue -f
-</code></pre>
-
-<p>检视剩下多少Queue</p>
-
-<pre><code>postqueue -p
-</code></pre>
-
-<p>若还是不行的话… 那就考虑删除掉吧XD</p>
-
-<p>列出目前在 Mail Queue 中的信件</p>
-
-<pre><code>mailq
-</code></pre>
-
-<p>删除某一个队列的邮件</p>
-
-<pre><code>postsuper -d queue_id
-</code></pre>
-
-<p>删除所有在 Queue 中的邮件</p>
-
-<pre><code>postsuper -d ALL
-</code></pre>
-
-<p>删除所有正在deferred 队列中的邮件( 删除曾经发送失败的信)</p>
-
-<pre><code>postsuper -d ALL deferred
-</code></pre>
-
-<p>删除所有正在deferred 队列中的邮件( 可看出哪些信被删除了)</p>
-
-<pre><code>find /var/spool/postfix/deferred -type f -exec rm -vf \{\} \;
-</code></pre>
-
-<p>删掉「三天以前」无法发出的邮件</p>
-
-<p>    find /var/spool/postfix/deferred -type f -mtime +3 -exec rm -f {} \;</p>
-
-<p>列出目前所有无法发出的邮件</p>
-
-<p>    find /var/spool/postfix/deferred -type f -exec ls -l –time-style=+%Y-%m-%d_%H:%M:%S {} \;</p>
-
-<p>删除超过5 天的"defer" 队列中的退信纪录</p>
-
-<p>    find /var/spool/postfix/defer -type f -mtime +5 -exec rm -f {} \;</p>
-
-<p>若你发现在MailQ里面有相同的地址大量寄送垃圾信件时，可以透过下面的方式来挡掉…</p>
-
-<pre><code># vi /etc/postfix/header_checks
-# 加入要挡掉的来原信
-/^From:.service\@kcg\.gov\.tw/ DISCARD Attack Mail
-
-# postmap -q – regexp:/etc/postfix/header_checks &lt; /etc/postfix/header_checks
-# 重新让 Postfix 新 header_checks 生效
-
-# mailq | grep "xxx@abc.com" | cut -d " " -f1 | cut -d'*' -f1 | postsuper -d -
-# 删掉所有来自xxx@abc.com的MailQ
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ Linux Grep OR , Grep AND, Grep NOT]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/11/03/linux-grep-or/"/>
-    <updated>2012-11-03T00:11:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/11/03/linux-grep-or</id>
-    <content type="html"><![CDATA[<p><strong>Question:</strong> Can you explain how to use <code>OR</code>, <code>AND</code> and <code>NOT</code> operators in Unix grep command with some examples?</p>
-
-<p><strong>Answer:</strong> In grep, we have options equivalent to <code>OR</code> and <code>NOT</code> operators. There is no grep <code>AND</code> opearator. But, you can simulate <code>AND</code> using patterns. The examples mentioned below will help you to understand how to use <code>OR</code>, <code>AND</code> and <code>NOT</code> in Linux grep command.</p>
-
-<p>The following employee.txt file is used in the following examples.</p>
-
-<pre><code>$ cat employee.txt
-100  Thomas  Manager    Sales       $5,000
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-400  Nisha   Manager    Marketing   $9,500
-500  Randy   Manager    Sales       $6,000
-</code></pre>
-
-<p>You already knew that grep is extremely powerful based on these grep command examples.</p>
-
-<h2>Grep OR Operator</h2>
-
-<p>Use any one of the following 4 methods for grep OR. I prefer method number 3 mentioned below for grep OR operator.</p>
-
-<h3>1. Grep OR Using \|</h3>
-
-<p>If you use the grep command without any option, you need to use <code>\|</code> to separate multiple patterns for the or condition.</p>
-
-<pre><code>grep 'pattern1\|pattern2' filename
-</code></pre>
-
-<p>For example, grep either Tech or Sales from the employee.txt file. Without the back slash in front of the pipe, the following will not work.</p>
-
-<pre><code>$ grep 'Tech\|Sales' employee.txt
-100  Thomas  Manager    Sales       $5,000
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-500  Randy   Manager    Sales       $6,000
-</code></pre>
-
-<h3>2. Grep OR Using -E</h3>
-
-<p><code>grep -E</code> option is for extended regexp. If you use the grep command with <code>-E</code> option, you just need to use | to separate multiple patterns for the or condition.</p>
-
-<pre><code>grep -E 'pattern1|pattern2' filename
-</code></pre>
-
-<p>For example, grep either Tech or Sales from the employee.txt file. Just use the | to separate multiple OR patterns.</p>
-
-<pre><code>$ grep -E 'Tech|Sales' employee.txt
-100  Thomas  Manager    Sales       $5,000
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-500  Randy   Manager    Sales       $6,000
-</code></pre>
-
-<h3>3. Grep OR Using egrep</h3>
-
-<p>egrep is exactly same as <code>grep -E</code>. So, use egrep (without any option) and separate multiple patterns for the or condition.</p>
-
-<pre><code>egrep 'pattern1|pattern2' filename
-</code></pre>
-
-<p>For example, grep either Tech or Sales from the employee.txt file. Just use the | to separate multiple OR patterns.</p>
-
-<pre><code>$ egrep 'Tech|Sales' employee.txt
-100  Thomas  Manager    Sales       $5,000
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-500  Randy   Manager    Sales       $6,000
-</code></pre>
-
-<h3>4. Grep OR Using grep -e</h3>
-
-<p>Using grep -e option you can pass only one parameter. Use multiple <code>-e</code> option in a single command to use multiple patterns for the or condition.</p>
-
-<pre><code>grep -e pattern1 -e pattern2 filename
-</code></pre>
-
-<p>For example, grep either Tech or Sales from the employee.txt file. Use multiple <code>-e</code> option with grep for the multiple OR patterns.</p>
-
-<pre><code>$ grep -e Tech -e Sales employee.txt
-100  Thomas  Manager    Sales       $5,000
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-500  Randy   Manager    Sales       $6,000
-Grep AND
-</code></pre>
-
-<h3>5. Grep AND using <code>-E ‘pattern1.*pattern2'</code></h3>
-
-<p>There is no AND operator in grep. But, you can simulate AND using grep -E option.</p>
-
-<pre><code>grep -E 'pattern1.*pattern2' filename
-grep -E 'pattern1.*pattern2|pattern2.*pattern1' filename
-</code></pre>
-
-<p>The following example will grep all the lines that contain both “Dev” and “Tech” in it (in the same order).</p>
-
-<pre><code>$ grep -E 'Dev.*Tech' employee.txt
-200  Jason   Developer  Technology  $5,500
-</code></pre>
-
-<p>The following example will grep all the lines that contain both “Manager” and “Sales” in it (in any order).</p>
-
-<pre><code>$ grep -E 'Manager.*Sales|Sales.*Manager' employee.txt
-</code></pre>
-
-<p>Note: Using regular expressions in grep is very powerful if you know how to use it effectively.</p>
-
-<h3>6. Grep AND using Multiple grep command</h3>
-
-<p>You can also use multiple grep command separated by pipe to simulate AND scenario.</p>
-
-<pre><code>grep -E 'pattern1' filename | grep -E 'pattern2'
-</code></pre>
-
-<p>The following example will grep all the lines that contain both “Manager” and “Sales” in the same line.</p>
-
-<pre><code>$ grep Manager employee.txt | grep Sales
-100  Thomas  Manager    Sales       $5,000
-500  Randy   Manager    Sales       $6,000
-Grep NOT
-</code></pre>
-
-<h3>7. Grep NOT using grep -v</h3>
-
-<p>Using grep <code>-v</code> you can simulate the NOT conditions. <code>-v</code> option is for invert match. i.e It matches all the lines except the given pattern.</p>
-
-<pre><code>grep -v 'pattern1' filename
-</code></pre>
-
-<p>For example, display all the lines except those that contains the keyword “Sales”.</p>
-
-<pre><code>$ grep -v Sales employee.txt
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-400  Nisha   Manager    Marketing   $9,500
-</code></pre>
-
-<p>You can also combine NOT with other operator to get some powerful combinations.</p>
-
-<p>For example, the following will display either Manager or Developer (bot ignore Sales).</p>
-
-<pre><code>$ egrep 'Manager|Developer' employee.txt | grep -v Sales
-200  Jason   Developer  Technology  $5,500
-400  Nisha   Manager    Marketing   $9,500
 </code></pre>
 ]]></content>
   </entry>

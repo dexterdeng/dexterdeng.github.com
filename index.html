@@ -9,8 +9,7 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="要想fb功能work， 需要确保认证的cacert.pem 在/public/
-以下配置需要视具体情况变更 ENV[&#8220;MAGICK_CODER_MODULE_PATH&#8221;]=&#8221;/usr/lib64/ImageMagick-6.7.0/modules-Q16/ &hellip;">
+  <meta name="description" content="I encountered these issues today. I can&#8217;t set default rvm to different users. like hudson and nginx. solution: PATH=/usr/kerberos/sbin:/usr/ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -67,6 +66,391 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/18/crontab-issues-with-rvm/">Crontab Issues With Rvm</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-18T17:45:00+08:00" pubdate data-updated="true">Jan 18<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I encountered these issues today.</p>
+
+<ol>
+<li>I can&#8217;t set default rvm to different users. like hudson and nginx.</li>
+</ol>
+
+
+<p>solution:</p>
+
+<pre><code>PATH=/usr/kerberos/sbin:/usr/local/rvm/gems/ree-1.8.7-2011.03/bin:/usr/local/rvm/gems/ree-1.8.7-2011.03@global/bin:/usr/local/rvm/rubies/ree-1.8.7-2011.03/bin:/usr/local/rvm/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/blabla/bin
+[[ -s "/usr/local/rvm/scripts/rvm" ]] &amp;&amp; . "/usr/local/rvm/scripts/rvm" # Load RVM function
+rvm ree-1.8.7-2011.03 --default
+</code></pre>
+
+<ol>
+<li><p>after I did #1, I encountered another issue. nginx user can&#8217;t run
+crontab -l or crontab -l. it spotted  something like that:</p>
+
+<p> user (nginx) are not allowed to access to (crontab) because of pam configuration</p></li>
+</ol>
+
+
+<p>solution:</p>
+
+<pre><code>#
+# The PAM configuration file for the cron daemon
+#
+#
+#auth      sufficient pam_env.so          # Comment that line
+#auth       required   pam_rootok.so    # Comment that line
+
+auth       sufficient pam_rootok.so       # Add that line
+auth       required   pam_env.so        # Add that line
+
+auth       include    system-auth
+account    required   pam_access.so
+account    include    system-auth
+session    required   pam_loginuid.so
+session    include    system-auth
+</code></pre>
+
+<p>   and then, I can run crontab -e now.</p>
+
+<ol>
+<li>nginx can&#8217;t use rvm stuff.</li>
+</ol>
+
+
+<p>solution.</p>
+
+<pre><code>/usr/local/rvm/bin/rake-ree-1.8.7-2011.03 can run the rake tasks directly
+</code></pre>
+
+<p>  I added a task to edit crontab  , replace <code>/usr/bin/env ruby</code> with <code>/usr/local/rvm/bin/rake-ree-1.8.7-2011.03</code></p>
+
+<pre><code>desc "correct crontab "
+task :cron =&gt; :environment do
+  oc = `crontab -l`
+  #nrake = "/Users/mac/.rbenv/shims/rake"
+  nrake = "/usr/local/rvm/bin/rake-ree-1.8.7-2011.03"
+  oc = oc.split("\n").map{|l|
+    l.gsub("/usr/bin/env rake", nrake)
+  }
+  cf = File.new("#{RAILS_ROOT}/tmp/nc.txt", "w")
+  cf.puts oc.join("\n")
+  cf.close
+
+  `crontab &lt; #{RAILS_ROOT}/tmp/nc.txt`
+end
+</code></pre>
+
+<p>  and then , I add this to deploy script.</p>
+
+<pre><code>namespace :deploy do
+desc "Update the crontab file"
+  task :update_crontab, :roles =&gt; :db do
+    run "cd #{release_path} &amp;&amp; whenever --update-crontab #{application} &amp;&amp; rake sys:cron RAILS_ENV=production"
+  end
+end 
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/18/wo-da-suan-shang-lu-liao/">我打算上路了</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-18T03:43:00+08:00" pubdate data-updated="true">Jan 18<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>这次我等婚姻真的出现最难的一关。
+这些年，不知道我是怎么混过来的。我完全得不到最终，而我的家人也受牵连。
+即使我在努力， 也都是<code>自私鬼</code>.</p>
+
+<p>我不想抱怨，起码这几年我，我很失败。事业，家庭双重失败。</p>
+
+<p>我还是太嫩了。 我也不想。 我完全没能力做好一个好丈夫， 一个好父亲。
+我不想解释什么，反正我都是错的。</p>
+
+<p>我需要思考人生，我需要历经磨难，
+老天觉得我不该拥有这一切，所有，一而再再而三向我发难。</p>
+
+<p>这个世界上，我最对不起的是我等老父亲老母亲。 我没给你们一天享清福，
+我也没有孝敬过你什么。 而你们奉献了所有。
+自古以来的孝道，我一点也没有做好。 但今后，我一定回补偿的，
+不是立刻，马上。 也是以后， 但我心里永远记着。我会做的</p>
+
+<p>我第二对不起的是我可爱又可怜的坤坤，当初，你还在娘胎里，我就预感到我们婚姻会很不幸，几乎差点就把你扼杀掉了。可是你真的很争气，你很聪明，很懂事，学的快。可是我又能给你做什么呢。 我都没有做好，让你也受牵连， 以后我会补偿你。</p>
+
+<p>第三，我对不起的就是我可怜的老婆。 恋爱到结婚， 我们走过快10年，
+我没有给你过上富足的日子。但在当下这个现状。起码我们也比80％的中国人过的好了，生活是一种心态，如果你心态好，
+我们完全是处处和谐。 我们家完全不会有人受欺负。
+当然，你一直都高高在上，欺负和蔑视一切人，我压力很大。
+我做不好，这10年，你得青春年华，最黄金的时间，浪费再了我的身上，但谁又能保证你不会碰到一个逼我还混还差的混蛋呢？当初我看起来也算是一表人才。
+人都是走一步，爬一步，才会发现原来可以这样。
+和两年前相比，你不觉得野心，视野大了很大。
+我永远满足不了你得期望，我从来在你眼里都是个瘪三。
+你自以为可以我行我素，自命清高，关键时候，还是听信旁人的话。
+结婚的时候， 我们就已种下了祸根。人应该有完整的人格，生活也不是工作，
+家庭不要不是办公室。 你也不是其他所有人的上司。 随意骂人那时旧社会。
+你完全不懂夫妻相处之道，这一次你明明都已经明白怎么回事，还是要穷根究底。当然是我做了，但也是一点点隐私。
+至少也不是什么道德问题。我都求你了，你依然不放过。 对的，是我错了。
+我们之间，积累的种种， 已经差劲到了极点。 我的家人，
+你对他们甚至连厌恶都懒得有。 在你眼里，他们属于社会上最丑恶的人。
+我在你眼里，是个自私， 无耻到了极点的人。
+我们肯定有问题。但是，能变成这样， 我觉得你看事物的角度有一点问题。</p>
+
+<p>我觉得，能闹成这样， 还都是因为一个穷字。</p>
+
+<p>因为穷，
+长辈在你眼里也只是年龄稍大的大爷大妈；</p>
+
+<p>因为穷，
+我们得罪了你们家里所有关键人物。</p>
+
+<p>因为穷，
+到今天，我没有一点私人财产，甚至，一直都欠着银行的钱，尽管我收入相当也不差。</p>
+
+<p>因为穷，
+我说一百句，抵不上水果摊，或者公交车上人随便的一句话。</p>
+
+<p>其实我要求很的，大家都随便一点，轻松一点，
+对我家人即使你不喜欢，也不要去讨厌他们。 即使不接纳，也不要去诋毁他们。
+对我，10次做错了能少马一次。 稍微留点零花钱，
+尊重一点我都看法，即使说错了也不要谴责我， 留一点秘密，
+因为这点秘密可能也是我自卑的地方。这叫隐私。</p>
+
+<p>好了， 我说了这么多，后面的篇幅有点长，而且变成了好笑指责我老婆的文章。
+未免太小家子气。写了就写了，反正我也不是什么好东西。
+尽管我从来不害人，有时候还做一点点慈善。</p>
+
+<p>继续反思。</p>
+
+<p>男人身上的担子是比较重，
+很多时候，我的确没有意识到有些事情应该是我的责任。 应该主动承担起来。
+而且很多琐碎小事，即使被提醒无数遍，也一样不会放在心上，这也是我长久以来，
+一直被骂的一个重要原因。</p>
+
+<p>我很多事情都不在乎， 买差了东西，
+做错了事，只要能修补，我下次还会在重复同样的问题。
+不过，我对生活的要求的确不高。  这里也有另外一条结论，
+任何时候，不要以为你的弱项一点会被对方的强项互补，很有可能，
+对方因为你得弱项，而放弃自己的强项。 或者抵制而不共享强项带来的号称。</p>
+
+<p>我认为生活就是过得去，然后再加上几个认真的理想，就精彩了。
+我都理想就是我吹过的牛，什么三十岁，四十岁之类的。
+别人说是吹牛，我自己说是理想， 结果现状我自己也愿意承认这时吹牛。
+不过好在我还在坚持，
+换过来，如果别人认为是理想，而我自己认为是吹牛， 那么结果回事怎样呢？
+我想我也会当成理想。
+在进一步， 如果别人合我都认为是理想， 会不会引起共振和火花呢。</p>
+
+<p>再谈谈吹牛， 其实没次我吹牛，我都是很认真的。 重要的事，我都行动了。
+没有任何一件事，我说过，而不努力苦等的。</p>
+
+<p>实际上，这个社会上还是“别人”多。 如果有第三类人， 那一点是最好的朋友。
+或者最好的伙伴。</p>
+
+<p>“自私”？ 其实我决定我还真挺无私的，不过我一点都不伟大。
+我也要一点私人空间，和私人资源。结果已经很明显了</p>
+
+<p>我还是不够努力， 虽然我工作的时间每天都大概有16小时。
+但是不是所有时间效率都很高， 很多时候，我也会边听听音乐，看看电影。
+不过我都生活本来就枯燥，如果我能忍受这么长时间工作而不调剂一下，相信我一定是一个很无趣的人。
+但一定要有意识提高高效率的时长。要知道时间就是钱。</p>
+
+<p>对老婆孩子，对父母，多一些关爱。 还不是穷嘛。</p>
+
+<p>如今我的生活， 到了一个十字路口，
+我们真的不适合在一起生活，因为你一辈子也不会感到幸福。当你扫一眼的时候，你已经轻松的跳过了我。</p>
+
+<p>今年过年，我不想回去了。 我想在路上过。 对不起了，你们所有人。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/16/install-hudson/">Install Hudson</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-16T16:58:00+08:00" pubdate data-updated="true">Jan 16<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h4>亲信官方文档， 导致错误</h4>
+
+<p>官方这么说： http://wiki.hudson-ci.org/display/HUDSON/Installing+Hudson+using+RPM+repository</p>
+
+<pre><code>Installation
+sudo wget -O /etc/yum.repos.d/hudson.repo http://hudson-ci.org/redhat/hudson.repo
+sudo yum check-update
+sudo yum install hudson
+</code></pre>
+
+<p>错！</p>
+
+<p>第一行命令执行完， 得到一下结果：</p>
+
+<pre><code>Loaded plugins: fastestmirror, security
+Loading mirror speeds from cached hostfile
+ * base: dist1.800hosting.com
+ * epel: mirrors.servercentral.net
+ * extras: mirror.rackspace.com
+ * rpmforge: mirror.teklinks.com
+ * updates: mirror.raystedman.net
+hudson/primary_db                                                                                                                                           | 5.0 kB     00:00     
+http://hudson-ci.org/redhat/repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2: [Errno -3] Error performing checksum
+Trying other mirror.
+Error: failure: repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2 from hudson: [Errno 256] No more mirrors to try.
+</code></pre>
+
+<p>无论执行何yum命令，都会出现这个结果。</p>
+
+<p>解决：</p>
+
+<pre><code>rm /etc/yum.repos.d/hudson.repo
+</code></pre>
+
+<p>删掉yum.repos.d里hudson记录即可</p>
+
+<h3>继续，重新开始</h3>
+
+<h4>安装JDK</h4>
+
+<pre><code>yum search java #找到最新，java
+
+yum install java-1.6.0-openjdk.x86_64 java-1.6.0-openjdk-devel.x86_64
+</code></pre>
+
+<h4>安装hudson</h4>
+
+<pre><code>找到http://hudson-ci.org/redhat/RPMS/noarch/ 最新hudson rpm 按住包
+
+wget http://hudson-ci.org/redhat/RPMS/noarch/hudson-3.0.0-1.1.noarch.rpm
+</code></pre>
+
+<p>配置：安装完之后，你可以在/etc/sysconfig/hudson设置启动用户（涉及到执行构建的权限），hudson主目录。</p>
+
+<h4>启动hudson</h4>
+
+<pre><code>/sbin/service hudson start
+</code></pre>
+
+<p>open http://66.135.35.84:8080/
+choose plugins to install and click <code>instann</code></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/16/wang-zhan-gong-ji-shi-li/">网站攻击实例</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-16T00:06:00+08:00" pubdate data-updated="true">Jan 16<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><pre><code>http://dev.blanee.com/recherche?city_id=city_32&amp;loc=Casablanca&amp;query=999999.9+union+all+select+0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536--
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1406,509 +1790,6 @@ rsync -rtv --exclude 'path/to/file.txt' source_folder/ destination_folder/
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/01/07/%5B%3F%5D-dian-jing-yan-jiao-xun/">一点经验教训</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-01-07T12:27:00+08:00" pubdate data-updated="true">Jan 7<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h3>流量刚过15k，一个新的里程碑</h3>
-
-<p>坚持做两年的项目， 流量上了一个新阶段。</p>
-
-<p>很多问题随之产生， 这里就最近的一些经验。稍微总结一下。</p>
-
-<h3>数据库session表超大，导致dump文件超大，11G</h3>
-
-<p>最近数据库dump文件超大，一直欣慰的以为数据量大了，实则可笑至极。</p>
-
-<p>在解决这个问题过程中， 我找到几个方案。</p>
-
-<h4>数据量真的庞大</h4>
-
-<p>对数据做partition, 这样数据库更稳定。</p>
-
-<h4>有很庞大的表</h4>
-
-<p>如果数据不是很有价值，那么应该删除过期数据。
-如果数据很有价值，那么应该分表了。</p>
-
-<h3>Perconas是个好东西， 更省cpu</h3>
-
-<p>以后有机会，要换这个数据库。</p>
-
-<h3>数据库恢复时，手动restore 了一些表，</h3>
-
-<p>发现一下行其实是有作用的，否则容易出现法语乱码:</p>
-
-<blockquote><p>&#8211; MySQL dump 10.11
-  &#8211;
-  &#8211; Host: localhost    Database: blabla</p>
-
-<hr />
-
-<p>  &#8211; Server version5.0.92-log</p>
-
-<p>/<em>!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT </em>/;
-  /<em>!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS </em>/;
-  /<em>!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION </em>/;
-  /<em>!40101 SET NAMES utf8 </em>/;
-  /<em>!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE </em>/;
-  /<em>!40103 SET TIME_ZONE=&#8217;+00:00&#8217; </em>/;
-  /<em>!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 </em>/;
-  /<em>!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS,
-  FOREIGN_KEY_CHECKS=0 </em>/;
-  /<em>!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE=&#8217;NO_AUTO_VALUE_ON_ZERO&#8217;
-  </em>/;
-  /<em>!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 </em>/;</p></blockquote>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/11/08/mysqlyou-hua-my-dot-ini-pei-zhi-shuo-ming/">mySQL优化 my.ini 配置说明</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-11-08T15:19:00+08:00" pubdate data-updated="true">Nov 8<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>[mysqld]
-port = 3306
-serverid = 1</p>
-
-<p>socket = /tmp/mysql.sock</p>
-
-<p>skip-name-resolve</p>
-
-<blockquote><p>禁止MySQL对外部连接进行DNS解析，使用这一选项可以消除MySQL进行DNS解析的时间。但需要注意，如果开启该选项，则所有远程主机连接授权都要使用IP地址方式，否则MySQL将无法正常处理连接请求！注：如果用winform连接mysql，加入此句速度会有很大的提升</p></blockquote>
-
-<p>skip-locking</p>
-
-<blockquote><p>避免MySQL的外部锁定，减少出错几率增强稳定性。</p></blockquote>
-
-<p>back_log = 384</p>
-
-<blockquote><p>指定MySQL可能的连接数量。当MySQL主线程在很短的时间内接收到非常多的连接请求，该参数生效，主线程花费很短的时间检查连接并且启动一个新线程。 back_log参数的值指出在MySQL暂时停止响应新请求之前的短时间内多少个请求可以被存在堆栈中。 如果系统在一个短时间内有很多连接，则需要增大该参数的值，该参数值指定到来的TCP/IP连接的侦听队列的大小。不同的操作系统在这个队列大小上有它自己的限制。 试图设定back_log高于你的操作系统的限制将是无效的。默认值为50。对于Linux系统推荐设置为小于512的整数。</p></blockquote>
-
-<p>key_buffer_size = 32M</p>
-
-<blockquote><p>key_buffer_size这对MyISAM表来说非常重要。如果只是使用MyISAM表，可以把它设置为可用内存的 30-40%。合理的值取决于索引大小、数据量以及负载 — 记住，MyISAM表会使用操作系统的缓存来缓存数据，因此需要留出部分内存给它们，很多情况下数据比索引大多了。尽管如此，需要总是检查是否所有的 key_buffer 都被利用了 — .MYI 文件只有 1GB，而 key_buffer 却设置为 4GB 的情况是非常少的。这么做太浪费了。如果你很少使用MyISAM表，那么也保留低于 16-32MB 的key_buffer_size 以适应给予磁盘的临时表索引所需。</p></blockquote>
-
-<p>innodb_buffer_pool_size = 2.4G</p>
-
-<blockquote><p>这对Innodb表来说非常重要。Innodb相比MyISAM表对缓冲更为敏感。MyISAM可以在默认的 key_buffer_size 设置下运行的可以，然而Innodb在默认的innodb_buffer_pool_size 设置下却跟蜗牛似的。由于Innodb把数据和索引都缓存起来，无需留给操作系统太多的内存，因此如果只需要用Innodb的话则可以设置它高达 70-80% 的可用内存。– 如果你的数据量不大，并且不会暴增，那么无需把innodb_buffer_pool_size 设置的太大了。</p></blockquote>
-
-<p>innodb_additional_pool_size = 20M</p>
-
-<blockquote><p>这个选项对性能影响并不太多，至少在有差不多足够内存可分配的操作系统上是这样。不过如果你仍然想设置为 20MB(或者更大)，因此就需要看一下Innodb其他需要分配的内存有多少。</p></blockquote>
-
-<p>innodb_log_file_size = 512M</p>
-
-<blockquote><p>在高写入负载尤其是大数据集的情况下很重要。这个值越大则性能相对越高，但是要注意到可能会增加恢复时间。我经常设置为64-512MB，根据服务器大小而异。</p></blockquote>
-
-<p>innodb_log_buffer_size =16M</p>
-
-<blockquote><p>默认的设置在中等强度写入负载以及较短事务的情况下，服务器性能还可以。如果存在更新操作峰值或者负载较大，就应该考虑加大它的值了。如果它的值设置太高了，可能会浪费内存 — 它每秒都会刷新一次，因此无需设置超过1秒所需的内存空间。通常8-16MB就足够了。越小的系统它的值越小。</p></blockquote>
-
-<p>innodb_flush_logs_at_trx_commit = 2</p>
-
-<blockquote><p>是否为Innodb比MyISAM慢1000倍而头大?看来也许你忘了修改这个参数了。默认值是 1，这意味着每次提交的更新事务(或者每个事务之外的语句)都会刷新到磁盘中，而这相当耗费资源，尤其是没有电池备用缓存时。很多应用程序，尤其是从 MyISAM转变过来的那些，把它的值设置为 2 就可以了，也就是不把日志刷新到磁盘上，而只刷新到操作系统的缓存上。日志仍然会每秒刷新到磁盘中去，因此通常不会丢失每秒1-2次更新的消耗。如果设置为0就快很多了，不过也相对不安全了 — MySQL服务器崩溃时就会丢失一些事务。设置为2指挥丢失刷新到操作系统缓存的那部分事务。</p></blockquote>
-
-<p>max_allowed_packet = 4M
-thread_stack = 256K
-table_cache = 128K
-sort_buffer_size = 6M</p>
-
-<blockquote><p>查询排序时所能使用的缓冲区大小。注意：该参数对应的分配内存是每连接独占！如果有100个连接，那么实际分配的总共排序缓冲区大小为100 × 6 ＝ 600MB。所以，对于内存在4GB左右的服务器推荐设置为6-8M。</p></blockquote>
-
-<p>read_buffer_size = 4M</p>
-
-<blockquote><p>读查询操作所能使用的缓冲区大小。和sort_buffer_size一样，该参数对应的分配内存也是每连接独享！</p></blockquote>
-
-<p>join_buffer_size = 8M</p>
-
-<blockquote><p>联合查询操作所能使用的缓冲区大小，和sort_buffer_size一样，该参数对应的分配内存也是每连接独享！</p></blockquote>
-
-<p>myisam_sort_buffer_size = 64M
-table_cache = 512</p>
-
-<blockquote><p>打开一个表的开销可能很大。例如MyISAM把MYI文件头标志该表正在使用中。你肯定不希望这种操作太频繁，所以通常要加大缓存数量，使得足以最大限度地缓存打开的表。它需要用到操作系统的资源以及内存，对当前的硬件配置来说当然不是什么问题了。如果你有200多个表的话，那么设置为 1024 也许比较合适(每个线程都需要打开表)，如果连接数比较大那么就加大它的值。我曾经见过设置为100,000的情况。</p></blockquote>
-
-<p>thread_cache_size = 64</p>
-
-<blockquote><p>线程的创建和销毁的开销可能很大，因为每个线程的连接/断开都需要。我通常至少设置为 16。如果应用程序中有大量的跳跃并发连接并且 Threads_Created 的值也比较大，那么我就会加大它的值。它的目的是在通常的操作中无需创建新线程。</p></blockquote>
-
-<p>query_cache_size = 64M</p>
-
-<blockquote><p>指定MySQL查询缓冲区的大小。可以通过在MySQL控制台执行以下命令观察：</p>
-
-<blockquote><p>SHOW VARIABLES LIKE ‘%query_cache%’;
-SHOW STATUS LIKE ‘Qcache%’;
-如果Qcache_lowmem_prunes的值非常大，则表明经常出现缓冲不够的情况；如果Qcache_hits的值非常大，则表明查询缓冲使用非常频繁，如果该值较小反而会影响效率，那么可以考虑不用查询缓冲；Qcache_free_blocks，如果该值非常大，则表明缓冲区中碎片很多。</p></blockquote></blockquote>
-
-<p>tmp_table_size = 256M
-max_connections = 768</p>
-
-<blockquote><p>指定MySQL允许的最大连接进程数。如果在访问论坛时经常出现Too Many Connections的错误提 示，则需要增大该参数值。</p></blockquote>
-
-<p>max_connect_errors = 10000000
-wait_timeout = 10</p>
-
-<blockquote><p>指定一个请求的最大连接时间，对于4GB左右内存的服务器可以设置为5-10。</p></blockquote>
-
-<p>thread_concurrency = 8</p>
-
-<blockquote><p>该参数取值为服务器逻辑CPU数量×2，在本例中，服务器有2颗物理CPU，而每颗物理CPU又支持H.T超线程，所以实际取值为4 × 2 ＝ 8</p></blockquote>
-
-<p>skip-networking</p>
-
-<blockquote><p>开启该选项可以彻底关闭MySQL的TCP/IP连接方式，如果WEB服务器是以远程连接的方式访问MySQL数据库服务器则不要开启该选项！否则将无法正常连接！</p></blockquote>
-
-<p>show status 命令</p>
-
-<p>含义如下:</p>
-
-<ul>
-<li>aborted_clients 客户端非法中断连接次数</li>
-<li>aborted_connects 连接mysql失败次数</li>
-<li>com_xxx xxx命令执行次数,有很多条</li>
-<li>connections 连接mysql的数量</li>
-<li>Created_tmp_disk_tables 在磁盘上创建的临时表</li>
-<li>Created_tmp_tables 在内存里创建的临时表</li>
-<li>Created_tmp_files 临时文件数</li>
-<li>Key_read_requests The number of requests to read a key block from the cache</li>
-<li>Key_reads The number of physical reads of a key block from disk</li>
-<li>Max_used_connections 同时使用的连接数</li>
-<li>Open_tables 开放的表</li>
-<li>Open_files 开放的文件</li>
-<li>Opened_tables 打开的表</li>
-<li>Questions 提交到server的查询数</li>
-<li>Sort_merge_passes 如果这个值很大,应该增加my.cnf中的sort_buffer值</li>
-<li>Uptime 服务器已经工作的秒数</li>
-</ul>
-
-
-<h3>提升性能的建议:</h3>
-
-<ol>
-<li>如果opened_tables太大,应该把my.cnf中的table_cache变大</li>
-<li>如果Key_reads太大,则应该把my.cnf中key_buffer_size变大.可以用Key_reads/Key_read_requests计算出cache失败率</li>
-<li>如果Handler_read_rnd太大,则你写的SQL语句里很多查询都是要扫描整个表,而没有发挥索引的键的作用</li>
-<li>如果Threads_created太大,就要增加my.cnf中thread_cache_size的值.可以用Threads_created/Connections计算cache命中率</li>
-<li>如果Created_tmp_disk_tables太大,就要增加my.cnf中tmp_table_size的值,用基于内存的临时表代替基于磁盘的</li>
-</ol>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/11/08/how-to-enhance-mysql-performance/">How to Enhance Mysql Performance</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-11-08T11:36:00+08:00" pubdate data-updated="true">Nov 8<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h3>1. use <code>show processlist</code></h3>
-
-<pre><code>show processlist
-</code></pre>
-
-<p>it can  check the connections,  and find the slow sql.  You can add index to some columns if needed</p>
-
-<h3>2. check <code>/var/lib/mysql/slow.log</code></h3>
-
-<pre><code>cat /var/lib/mysql/slow.log
-</code></pre>
-
-<p>it can  check the connections,  and find the slow sql.  You can add index to some columns if needed</p>
-
-<p>e.g.</p>
-
-<pre><code>SELECT DISTINCT(events.id), events.* FROM `events`   left join  event_users on event_users.event_id = events.id  WHERE ((events.user_id = 444 or (event_users.user_id = 444 and event_users.status != 0)) and (events.end_at &lt; '2012-11-07'  or (events.end_at  is null and events.start_at  &lt; '2012-11-07' )))  LIMIT 0, 20;
-</code></pre>
-
-<p>it took 5 s for the first running.</p>
-
-<pre><code>show index from events
-</code></pre>
-
-<p>I got this:</p>
-
-<pre><code>    +--------+------------+---------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
-| Table  | Non_unique | Key_name                  | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment |
-+--------+------------+---------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
-| events |          0 | PRIMARY                   |            1 | id          | A         |        2180 |     NULL | NULL   |      | BTREE      |         | 
-| events |          1 | index_events_on_permalink |            1 | permalink   | A         |        2180 |     NULL | NULL   | YES  | BTREE      |         | 
-+--------+------------+---------------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
-2 rows in set (0.00 sec)
-
-
-mysql&gt; show index from event_users;
-+-------------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
-| Table       | Non_unique | Key_name | Seq_in_index | Column_name | Collation | Cardinality | Sub_part | Packed | Null | Index_type | Comment |
-+-------------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
-| event_users |          0 | PRIMARY  |            1 | id          | A         |        7671 |     NULL | NULL   |      | BTREE      |         | 
-+-------------+------------+----------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+
-</code></pre>
-
-<p>I decide to add index to event_users&#8217;s event_id, user_id, events.user_id</p>
-
-<pre><code>ALTER TABLE `events` ADD INDEX ( `user_id` )
-ALTER TABLE `event_users` ADD INDEX ( `user_id` )
-ALTER TABLE `event_users` ADD INDEX ( `event_id` )
-</code></pre>
-
-<h3>2. use <code>mysqltuner.pl</code>###</h3>
-
-<p><code>mysqltuner.pl</code> is a perl script. it can connect the mysql and check
-issues, and recommend you how to enhance it.</p>
-
-<pre><code>$ perl mysqltuner.pl 
-
- &gt;&gt;  MySQLTuner 1.2.0 - Major Hayden &lt;major@mhtx.net&gt;
- &gt;&gt;  Bug reports, feature requests, and downloads at http://mysqltuner.com/
- &gt;&gt;  Run with '--help' for additional options and output filtering
-Please enter your MySQL administrative login: root
-Please enter your MySQL administrative password: 
-
--------- General Statistics --------------------------------------------------
-[--] Skipped version check for MySQLTuner script
-[OK] Currently running supported MySQL version 5.0.92-log
-[OK] Operating on 64-bit architecture
-
--------- Storage Engine Statistics -------------------------------------------
-[--] Status: -Archive -BDB -Federated +InnoDB -ISAM -NDBCluster 
-[--] Data in MyISAM tables: 105M (Tables: 55)
-[--] Data in InnoDB tables: 18G (Tables: 938)
-[!!] Total fragmented tables: 6
-
--------- Security Recommendations  -------------------------------------------
-[OK] All database users have passwords assigned
-
--------- Performance Metrics -------------------------------------------------
-[--] Up for: 4d 20h 36m 22s (38M q [91.609 qps], 65K conn, TX: 78B, RX: 5B)
-[--] Reads / Writes: 88% / 12%
-[--] Total buffers: 3.3G global + 42.2M per thread (100 max threads)
-[OK] Maximum possible memory usage: 7.5G (31% of installed RAM)
-[OK] Slow queries: 0% (77/38M)
-[OK] Highest usage of available connections: 43% (43/100)
-[OK] Key buffer size / total MyISAM indexes: 140.0M/143.8M
-[OK] Key buffer hit rate: 99.9% (218M cached / 122K reads)
-[OK] Query cache efficiency: 36.7% (12M cached / 32M selects)
-[!!] Query cache prunes per day: 2340785
-[OK] Sorts requiring temporary tables: 0% (5K temp sorts / 2M sorts)
-[!!] Joins performed without indexes: 109640
-[!!] Temporary tables created on disk: 29% (700K on disk / 2M total)
-[OK] Thread cache hit rate: 99% (43 created / 65K connections)
-[!!] Table cache hit rate: 0% (100 open / 27K opened)
-[OK] Open file limit used: 0% (15/20K)
-[OK] Table locks acquired immediately: 99% (30M immediate / 30M locks)
-[!!] InnoDB data size / buffer pool: 18.5G/3.0G
-
--------- Recommendations -----------------------------------------------------
-General recommendations:
-    Run OPTIMIZE TABLE to defragment tables for better performance
-    Adjust your join queries to always utilize indexes
-    When making adjustments, make tmp_table_size/max_heap_table_size equal
-    Reduce your SELECT DISTINCT queries without LIMIT clauses
-    Increase table_cache gradually to avoid file descriptor limits
-Variables to adjust:
-    query_cache_size (&gt; 100M)
-    join_buffer_size (&gt; 32.0M, or always use indexes with joins)
-    tmp_table_size (&gt; 100M)
-    max_heap_table_size (&gt; 100M)
-    table_cache (&gt; 100)
-    innodb_buffer_pool_size (&gt;= 18G)
-</code></pre>
-
-<h4>1. <code>Run OPTIMIZE TABLE to defragment tables for better performance</code></h4>
-
-<p>Run this command:</p>
-
-<pre><code>mysqlcheck -u root --auto-repair --optimize --all-databases
-</code></pre>
-
-<p>You can usually fix the table by issuing:</p>
-
-<pre><code>mysqlcheck -A -r -p
-</code></pre>
-
-<p>Restart MYSQL Server:</p>
-
-<pre><code>/etc/init.d/mysql restart
-</code></pre>
-
-<p>use https://tools.percona.com/wizard/ to generate a conf file.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/11/06/how-to-integrate-mmseg-with-elasticsearch/">How to Integrate Mmseg With Elasticsearch</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-11-06T11:46:00+08:00" pubdate data-updated="true">Nov 6<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h3>install elasticsearch-analysis-mmseg</h3>
-
-<pre><code>cd /usr/local/elasticsearch
-sudo bin/plugin -install medcl/elasticsearch-analysis-mmseg/1.1.0  
-</code></pre>
-
-<h3>configure</h3>
-
-<pre><code>vi /etc/elasticsearch/elasticsearch.yml
-</code></pre>
-
-<p>add these lines in the elasticsearch</p>
-
-<pre><code>index:
-  analysis:
-    analyzer:
-      mmseg
-        alias: [news_analyzer, mmseg_analyzer]
-        type: org.elasticsearch.index.analysis.MMsegAnalyzerProvider
-    tokenizer:
-      mmseg_maxword:
-        type: mmseg
-        seg_type: "max_word"
-      mmseg_complex:
-        type: mmseg
-        seg_type: "complex"
-      mmseg_simple:
-        type: mmseg
-        seg_type: "simple"
-index.analysis.analyzer.default.type : "mmseg"
-</code></pre>
-
-<p>it means define analyzer and tokenizer. and the default analyzer</p>
-
-<h3>restart elasticsearch</h3>
-
-<pre><code>/etc/init.d/elasticsearch stop
-/etc/init.d/elasticsearch start
-</code></pre>
-
-<h3>How to use it</h3>
-
-<pre><code>tire.mapping do
-  indexes :id,             type: 'integer', :index =&gt; :not_analyzed
-  indexes :name,           type: "string", index: "analyzed", analyzer: "mmseg"
-  indexes :pinyin,         type: 'string'
-  indexes :created_at,     type: 'date'
-  indexes :updated_at,     type: 'date'
-end       
-</code></pre>
-
-<h3>regenerate index</h3>
-
-<pre><code>$ RAILS_ENV=production bundle exec rake environment tire:import CLASS='Article' FORCE=true
-</code></pre>
-
-<p>http://www.elasticsearch.org/guide/reference/modules/plugins.html</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; 更早</a>
@@ -1924,23 +1805,23 @@ end
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/01/18/crontab-issues-with-rvm/">crontab issues with rvm </a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/18/wo-da-suan-shang-lu-liao/">我打算上路了</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/16/install-hudson/">install hudson</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/16/wang-zhan-gong-ji-shi-li/">网站攻击实例</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/01/15/systembei-wang-lu/">system备忘录</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/15/install-tivoli/">install tivoli</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/15/configure-php-plus-nginx/">configure php + nginx </a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/15/postfix-mailq-cao-zuo/">postfix mailq 操作</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/13/about-mail-server/">about Mail Server</a>
       </li>
     
   </ul>

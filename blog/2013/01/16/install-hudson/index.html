@@ -5,11 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: linux - 脑波网</title>
+  <title>install hudson - 脑波网</title>
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="Category: linux">
+  <meta name="description" content="亲信官方文档， 导致错误 官方这么说： http://wiki.hudson-ci.org/display/HUDSON/Installing+Hudson+using+RPM+repository Installation
+sudo wget -O /etc/yum.repos.d/hudson &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://dexterdeng.github.comblog/categories/linux/">
+  <link rel="canonical" href="http://dexterdeng.github.com/blog/2013/01/16/install-hudson/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -65,151 +66,157 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: Linux</h1>
+    
+      <h1 class="entry-title">Install Hudson</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-16T16:58:00+08:00" pubdate data-updated="true">Jan 16<span>th</span>, 2013</time>
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><h4>亲信官方文档， 导致错误</h4>
 
-  
-  <h2>2013</h2>
+<p>官方这么说： http://wiki.hudson-ci.org/display/HUDSON/Installing+Hudson+using+RPM+repository</p>
 
-<article>
-  
-<h1><a href="/blog/2013/01/18/crontab-issues-with-rvm/">crontab issues with rvm </a></h1>
-<time datetime="2013-01-18T17:45:00+08:00" pubdate><span class='month'>Jan</span> <span class='day'>18</span> <span class='year'>2013</span></time>
+<pre><code>Installation
+sudo wget -O /etc/yum.repos.d/hudson.repo http://hudson-ci.org/redhat/hudson.repo
+sudo yum check-update
+sudo yum install hudson
+</code></pre>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/linux/'>linux</a></span>
-</footer>
+<p>错！</p>
 
+<p>第一行命令执行完， 得到一下结果：</p>
 
-</article>
+<pre><code>Loaded plugins: fastestmirror, security
+Loading mirror speeds from cached hostfile
+ * base: dist1.800hosting.com
+ * epel: mirrors.servercentral.net
+ * extras: mirror.rackspace.com
+ * rpmforge: mirror.teklinks.com
+ * updates: mirror.raystedman.net
+hudson/primary_db                                                                                                                                           | 5.0 kB     00:00     
+http://hudson-ci.org/redhat/repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2: [Errno -3] Error performing checksum
+Trying other mirror.
+Error: failure: repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2 from hudson: [Errno 256] No more mirrors to try.
+</code></pre>
 
+<p>无论执行何yum命令，都会出现这个结果。</p>
 
+<p>解决：</p>
 
-<article>
-  
-<h1><a href="/blog/2013/01/16/install-hudson/">install hudson</a></h1>
-<time datetime="2013-01-16T16:58:00+08:00" pubdate><span class='month'>Jan</span> <span class='day'>16</span> <span class='year'>2013</span></time>
+<pre><code>rm /etc/yum.repos.d/hudson.repo
+</code></pre>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/linux/'>linux</a></span>
-</footer>
+<p>删掉yum.repos.d里hudson记录即可</p>
 
+<h3>继续，重新开始</h3>
 
-</article>
+<h4>安装JDK</h4>
 
+<pre><code>yum search java #找到最新，java
 
+yum install java-1.6.0-openjdk.x86_64 java-1.6.0-openjdk-devel.x86_64
+</code></pre>
 
-<article>
-  
-<h1><a href="/blog/2013/01/16/wang-zhan-gong-ji-shi-li/">网站攻击实例</a></h1>
-<time datetime="2013-01-16T00:06:00+08:00" pubdate><span class='month'>Jan</span> <span class='day'>16</span> <span class='year'>2013</span></time>
+<h4>安装hudson</h4>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/linux/'>linux</a></span>
-</footer>
+<pre><code>找到http://hudson-ci.org/redhat/RPMS/noarch/ 最新hudson rpm 按住包
 
+wget http://hudson-ci.org/redhat/RPMS/noarch/hudson-3.0.0-1.1.noarch.rpm
+</code></pre>
 
-</article>
+<p>配置：安装完之后，你可以在/etc/sysconfig/hudson设置启动用户（涉及到执行构建的权限），hudson主目录。</p>
 
+<h4>启动hudson</h4>
 
+<pre><code>/sbin/service hudson start
+</code></pre>
 
-<article>
-  
-<h1><a href="/blog/2013/01/15/systembei-wang-lu/">system备忘录</a></h1>
-<time datetime="2013-01-15T15:24:00+08:00" pubdate><span class='month'>Jan</span> <span class='day'>15</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/linux/'>linux</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/01/15/install-tivoli/">install tivoli</a></h1>
-<time datetime="2013-01-15T15:21:00+08:00" pubdate><span class='month'>Jan</span> <span class='day'>15</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/linux/'>linux</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/01/15/configure-php-plus-nginx/">configure php + nginx </a></h1>
-<time datetime="2013-01-15T15:06:00+08:00" pubdate><span class='month'>Jan</span> <span class='day'>15</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/linux/'>linux</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2013/01/15/postfix-mailq-cao-zuo/">postfix mailq 操作</a></h1>
-<time datetime="2013-01-15T14:56:00+08:00" pubdate><span class='month'>Jan</span> <span class='day'>15</span> <span class='year'>2013</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/linux/'>linux</a></span>
-</footer>
-
-
-</article>
-
-
-
-  
-  <h2>2012</h2>
-
-<article>
-  
-<h1><a href="/blog/2012/11/03/linux-grep-or/"> Linux Grep OR , Grep AND, Grep NOT</a></h1>
-<time datetime="2012-11-03T00:11:00+08:00" pubdate><span class='month'>Nov</span> <span class='day'>03</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/linux/'>linux</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2012/10/30/add-user-to-group/">add user to group</a></h1>
-<time datetime="2012-10-30T16:55:00+08:00" pubdate><span class='month'>Oct</span> <span class='day'>30</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/linux/'>linux</a></span>
-</footer>
-
-
-</article>
-
+<p>open http://66.135.35.84:8080/
+choose plugins to install and click <code>instann</code></p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Dexter Deng</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-16T16:58:00+08:00" pubdate data-updated="true">Jan 16<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/linux/'>linux</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2013/01/16/install-hudson/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2013/01/16/install-hudson/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/01/16/wang-zhan-gong-ji-shi-li/" title="Previous Post: 网站攻击实例">&laquo; 网站攻击实例</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/01/18/wo-da-suan-shang-lu-liao/" title="Next Post: 我打算上路了">我打算上路了 &raquo;</a>
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -290,7 +297,10 @@
       var disqus_shortname = 'dexterdengsblog';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://dexterdeng.github.com/blog/2013/01/16/install-hudson/';
+        var disqus_url = 'http://dexterdeng.github.com/blog/2013/01/16/install-hudson/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
