@@ -4,7 +4,7 @@
   <title><![CDATA[脑波网]]></title>
   <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2013-01-18T18:15:44+08:00</updated>
+  <updated>2013-03-29T16:56:48+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,386 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[服务器宕机时间]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/03/20/fu-wu-qi-dang-ji-shi-jian/"/>
+    <updated>2013-03-20T01:33:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/03/20/fu-wu-qi-dang-ji-shi-jian</id>
+    <content type="html"><![CDATA[<p>今天服务器意外宕机， 原因尚未查明，  查明后补上。</p>
+
+<p>时间是中午1点， 服务器忽然变得超慢, 迅速没响应。 这时候我很愚蠢，
+本来有一点时间输入一条命令的，结果我输了个git pull.
+如果当时用top查看谁在坏事，或许结果会不一样。</p>
+
+<p>2点， 服务器可以ping通， 但是，只hudson 启动。
+并机房的人说，机器出现io错误。  根源应该是这个。</p>
+
+<pre><code>scsi 0:0:1:0: Attached scsi generic sg1 type 0
+sd 0:1:0:0: Attached scsi generic sg2 type 0
+floppy0: no floppy controllers found
+work still pending
+lp: driver loaded but no devices found
+ACPI: Power Button (FF) [PWRF]
+ACPI: Mapper loaded
+dell-wmi: No known WMI GUID found
+ACPI Exception (evregion-0424): AE_SUPPORT, Returned by Handler for [DataTable] [20060707]
+ACPI Error (psparse-0537): Method parse/execution failed [\_SB_.PMI0._GHL] (Node ffff81033005b8b0), AE_SUPPORT
+ACPI Error (psparse-0537): Method parse/execution failed [\_SB_.PMI0._PMC] (Node ffff81033005b8f0), AE_SUPPORT
+ACPI Exception (power_meter-0759): AE_SUPPORT, Evaluating _PMC [20060707]
+</code></pre>
+
+<p>几经周折，工作人员执意reloadserver, 3小时后， 旧hdd用usb线插入机器。
+(这里要检查是不是usb2.0. 否则拷贝很慢。</p>
+
+<pre><code>lsmod | grep hci
+The output should look something like this:
+
+uhci_hcd               22404  0 
+ehci_hcd               34688  0 
+usbcore               134576  5 oss_usb,usbhid,uhci_hcd,ehci_hcd
+If it only shows uhci and not ehci, then the usb 2.0 drivers just aren't loading）
+</code></pre>
+
+<p>下面事识别旧hdd。 这里比较麻烦，因为hdd上做了raid， 能看到的事linux lvm.
+不知道fs type. 导致 mount  不成功。</p>
+
+<h3>详细挂载步骤：…</h3>
+
+<h4>查看设备名称。</h4>
+
+<pre><code>cd /dev/disk
+
+tree -L 2
+.
+|-- by-id
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04 -&gt; ../../sda
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04-part1 -&gt; ../../sda1
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04-part2 -&gt; ../../sda2
+|   |-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003 -&gt; ../../sdb
+|   |-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003-part1 -&gt; ../../sdb1
+|   `-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003-part2 -&gt; ../../sdb2
+|-- by-label
+|   `-- boot -&gt; ../../sdb1
+|-- by-path
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0 -&gt; ../../sdb
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0-part1 -&gt; ../../sdb1
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0-part2 -&gt; ../../sdb2
+|   |-- pci-0000:02:00.0-scsi-0:1:0:0 -&gt; ../../sda
+|   |-- pci-0000:02:00.0-scsi-0:1:0:0-part1 -&gt; ../../sda1
+|   `-- pci-0000:02:00.0-scsi-0:1:0:0-part2 -&gt; ../../sda2
+`-- by-uuid
+    |-- 6e483701-3665-4369-b304-a0b997ca810d -&gt; ../../sda1
+    `-- f38282ea-3a5b-4b90-b48b-2b8573b08d9e -&gt; ../../sdb1
+
+可以看出， sdb1, sdb2 就是usb 连接的hdd。
+</code></pre>
+
+<h4>挂载失败</h4>
+
+<pre><code>mkdir /mnt/u2
+mount /dev/sdb2 /mnt/u2 失败，尝试不同文件系统也不能成功。
+</code></pre>
+
+<p>使用 fdlisk 查看。</p>
+
+<pre><code>[root@p3100221 log]# /sbin/fdisk -l
+
+Disk /dev/sda: 250.4 GB, 250450280448 bytes
+255 heads, 63 sectors/track, 30448 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1          32      257008+  83  Linux
+/dev/sda2              33       30448   244316520   8e  Linux LVM
+
+Disk /dev/sdb: 251.0 GB, 251059544064 bytes
+255 heads, 63 sectors/track, 30522 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1   *           1          32      257008+  83  Linux
+/dev/sdb2              33       30448   244316520   8e  Linux LVM
+</code></pre>
+
+<p> 由此可以断定， /dev/sdb2y而是一个逻辑分区。 因为做了raid的原因。
+所以不可以用 mount -t
+的方式挂载，而`而应该吧逻辑分区挂到某地方,而这种分区通常名字叫 /dev/VolGroup 之类</p>
+
+<h4>识别</h4>
+
+<p>/dev里看到一个 VolGroup, 里面有2,3个文件， 是一个整体。</p>
+
+<h5>为什么有2个Linux LVM, 却只有一个 VolGroup?</h5>
+
+<p>由此想到，两个电脑上本来都有各自LVM， VolGroup重名也说不定。
+网上搜帖子进一步应证明我的想法。 网上找到一些方法改名。下面事我的做法。</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgscan 
+Reading all physical volumes.  This may take a while...
+Found volume group "VolGroup" using metadata type lvm2
+Found volume group "VolGroup" using metadata type lvm2
+</code></pre>
+
+<h4>重命名VolGroup</h4>
+
+<p>查看uuid， 根据uuid重命名.</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgs -v
+Finding all volume groups
+Finding volume group "VolGroup"
+Archiving volume group "VolGroup" metadata (seqno 3).
+Archiving volume group "VolGroup" metadata (seqno 3).
+Creating volume group backup "/etc/lvm/backup/VolGroup" (seqno 3).
+Finding volume group "VolGroup"
+Archiving volume group "VolGroup" metadata (seqno 3).
+Archiving volume group "VolGroup" metadata (seqno 3).
+Creating volume group backup "/etc/lvm/backup/VolGroup" (seqno 3).
+VG       Attr   Ext    #PV #LV #SN VSize   VFree VG UUID                               
+VolGroup wz--n- 32.00M   1   2   0 232.97G    0  DS7moo-4w7q-ehNa-hT23-8Xvo-52eu-dP11PE
+VolGroup wz--n- 32.00M   1   2   0 232.97G    0  VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp
+</code></pre>
+
+<p>将VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp 重命名为 VolGroup01</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgrename VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp VolGroup01
+Volume group "VolGroup" successfully renamed to "VolGroup01"
+</code></pre>
+
+<p>至此, 我们就可以看到2个group，但相应文件并没产生， （/dev/VolGroup01
+有， /dev/VolGroupm没有了）</p>
+
+<pre><code>重新产生文件
+/usr/sbin/lvchange VolGroup01 -a y   #means activate VolGroup01
+
+/usr/sbin/lvscan
+</code></pre>
+
+<h4>现在可以挂在了h</h4>
+
+<pre><code>mount /dev/VolGroup01/lv_root /mnt/u1
+mount /dev/VolGroup/lv_root   /mnt/u2
+</code></pre>
+
+<h4>千万主注意，</h4>
+
+<p>因为fstab里使用了这个名称，所以，用完一定要确保原本的VolGroup依然存在</p>
+
+<pre><code>umount /mnt/u1
+umount /mnt/u2
+/usr/sbin/vgrename VolGroup VolGroupold
+/usr/sbin/vgrename VolGroup01 VolGroup
+
+做这个操作因为我们的VolGroup刚好不是新hdd了。 
+</code></pre>
+
+<p>如果 umount /mnt/u2 时出现 device is busy</p>
+
+<pre><code> /sbin/fuser  -m -v /mnt/u2
+</code></pre>
+
+<p>杀死用它的进程即可。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[server issues fixing]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/02/05/server-issues-fixing/"/>
+    <updated>2013-02-05T15:30:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/02/05/server-issues-fixing</id>
+    <content type="html"><![CDATA[<h4>set xid back from a old db</h4>
+
+<pre><code>update new_db.businesses, old_db.businesses 
+set new_db.businesses.xid = old_db.businesses.xid 
+where new_db.businesses.id  =  old_db.businesses.id ;
+</code></pre>
+
+<h4>bla_path(:format => :js) 会出现xxx.js, 到服务器后，就会出现404.</h4>
+
+<p>这是nginx造成的。
+解决：</p>
+
+<pre><code>location ~* ^.+\.(jpg|jpeg|js|gif|css)$ {
+    root /var/www/rails/blanee/development/public;
+  access_log off;
+  expires 30d;
+}
+
+讲js拿出来, 否则每次.js就跑到public/javascripts
+
+
+location ~ ^/(javascripts)/ { # rails3 用 assets
+    root /var/www/rails/blanee/development/public;
+  access_log off;
+  expires 30d;
+}
+
+location ~* ^.+\.(jpg|jpeg|gif|css)$ {
+    root /var/www/rails/blanee/development/public;
+  access_log off;
+  expires 30d;
+}
+</code></pre>
+
+<h4>Loading&#8230; 会爆 index not matched 错，</h4>
+
+<p>Loading&#8230; 会爆 index not matched 错，</p>
+
+<p>所以， i18n翻译文件里， 不要用连续的点.来作为键的一部分。</p>
+
+<pre><code>Error message:
+
+string not matched
+
+Exception class:
+
+IndexError
+</code></pre>
+
+<h4>create temp  table</h4>
+
+<pre><code>CREATE TABLE table2 AS (SELECT * FROM table1)
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[ruby 1.9.3 env]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/19/ruby-1-dot-9-3-env/"/>
+    <updated>2013-01-19T15:32:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/19/ruby-1-dot-9-3-env</id>
+    <content type="html"><![CDATA[<h3>downgrade rvm</h3>
+
+<pre><code>rvm get 1.10.1  
+这很重要， 否则就会出现以下#1问题。
+</code></pre>
+
+<ol>
+<li>install rvm .</li>
+</ol>
+
+
+<pre><code>rvm list known
+rvm install ruby-1.9.3 
+rvm list
+</code></pre>
+
+<p>结果有问题:</p>
+
+<pre><code>rvm rubies
+
+ * ree-1.8.7-2011.03 [ x86_64 ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.2-p290/config: 没有那个文件或目录
+ruby-1.9.2-p290 [  ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.3-p374/config: 没有那个文件或目录
+ruby-1.9.3-p374 [  ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.3-rc1/config: 没有那个文件或目录
+ruby-1.9.3-rc1 [  ]
+</code></pre>
+
+<p>解决：</p>
+
+<pre><code>rvm get stable
+rvm reinstall ruby-1.9.3-rc1
+</code></pre>
+
+<p>又有问题:</p>
+
+<pre><code>/usr/bin/env: bash: No such file or directory
+</code></pre>
+
+<p>解决：</p>
+
+<pre><code>rvm reload
+rvm reinstall ruby-1.9.3-rc1
+</code></pre>
+
+<p>搞定，将其他问题ruby全部重新安装。</p>
+
+<pre><code>rvm reinstall ruby-1.9.2-p290  
+rvm reinstall ruby-1.9.3-374
+</code></pre>
+
+<h3>install elasticsearch</h3>
+
+<pre><code>wget http://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.20.2.tar.gz
+tar -xzvf elasticsearch-0.20.2.tar.gz 
+mv elasticsearch-0.20.2 elasticsearch
+mv elasticsearch /usr/local/share/
+curl -L http://github.com/elasticsearch/elasticsearch-servicewrapper/tarball/master | tar -xz
+mv *servicewrapper*/service /usr/local/share/elasticsearch/bin/
+rm -Rf *servicewrapper*
+/usr/local/share/elasticsearch/bin/service/elasticsearch install
+/etc/init.d/elasticsearch start
+</code></pre>
+
+<h3>配置nginx</h3>
+
+<p>更改 passenger_ruby和passenger_root后， 启动出现如下问题。</p>
+
+<pre><code># /sbin/service nginx restart
+
+停止 nginx：                                               [确定]
+启动 nginx：nginx: [alert] Unable to start the Phusion Passenger watchdog because its executable (/usr/local/rvm/gems/ruby-1.9.3-p362/gems/passenger-3.0.19/agents/PassengerWatchdog) does not exist. This probably means that your Phusion Passenger installation is broken or incomplete, or that your 'passenger_root' directive is set to the wrong value. Please reinstall Phusion Passenger or fix your 'passenger_root' directive, whichever is applicable. (-1: Unknown error)
+                                                           [确定]
+</code></pre>
+
+<p>解决：</p>
+
+<pre><code>passenger-config --root 
+rake nginx
+</code></pre>
+
+<h4>还有问题：cannot load such file &#8211; bundler</h4>
+
+<p>Error:</p>
+
+<pre><code>Error message:
+cannot load such file -- bundler
+</code></pre>
+
+<p>Solution:</p>
+
+<pre><code>#passenger_root /usr/local/rvm/gems/ree-1.8.7-2011.03/gems/passenger-2.2.15;
+#passenger_root /usr/local/rvm/gems/ree-1.8.7-2011.03/gems/passenger-3.0.5;
+
+passenger_root /usr/local/rvm/gems/ruby-1.9.3-p362/gems/passenger-3.0.19;
+
+#passenger_ruby /usr/local/rvm/rubies/ree-1.8.7-2011.03/bin/ruby;
+#passenger_ruby /usr/local/rvm/rubies/ruby-1.9.3-p362/bin/ruby;
+passenger_ruby /usr/local/rvm/wrappers/ruby-1.9.3-p362/ruby;
+</code></pre>
+
+<p>yg b</p>
+
+<pre><code>rails_spawn_method conservative;
+passenger_user_switching on;
+passenger_default_user nginx;
+passenger_default_group nginx;
+passenger_max_pool_size 45;
+</code></pre>
+
+<p>关键事这两句：</p>
+
+<pre><code>#passenger_ruby /usr/local/rvm/rubies/ruby-1.9.3-p362/bin/ruby;
+passenger_ruby /usr/local/rvm/wrappers/ruby-1.9.3-p362/ruby;
+</code></pre>
+
+<p>使用wrappers里的ruby</p>
+
+<h3>install node.js + juggernaut ###</h3>
+
+<p>I tried python3.3 with node 0.8.18,  0.8.* , doesn&#8217;t works.</p>
+
+<pre><code>git clone https://github.com/joyent/node.git
+git branch --track v0.6 origin/v0.6
+git checkout v0.6
+./configure
+make
+make install
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[crontab issues with rvm ]]></title>
@@ -780,6 +1160,8 @@ OpenDKIM版本是最新的，有人维护的。比之于老掉牙的DomainKeys�
 <pre><code>rpm -ivh dk-milter-1.0.2-1.x86_64.rpm 
 </code></pre>
 
+<p>切记使用服务器上那个，否则装起来很麻烦</p>
+
 <h4>Modify the default dk-milter configuration</h4>
 
 <p>The RPM you installed copied the necessary binaries and default configuration files for dk-milter. However, we won’t be using the default settings. Because you already chose a selector, created keys, and set up your DNS records when you set up OpenDKIM, we can re-use the same selector, keys, and DNS records in dk-milter with a few simple modifications.</p>
@@ -1053,7 +1435,20 @@ X-Authentication-Warning: p3100221.pubip.serverbeach.com: nginx set sender to no
     <link href="http://dexterdeng.github.com/blog/2013/01/07/setup-new-environment/"/>
     <updated>2013-01-07T13:32:00+08:00</updated>
     <id>http://dexterdeng.github.com/blog/2013/01/07/setup-new-environment</id>
-    <content type="html"><![CDATA[<h3>install RVM</h3>
+    <content type="html"><![CDATA[<h3>事前注意</h3>
+
+<pre><code>如果事64位的机器，千万不要像这样随便装东西， 比如 `yum install
+</code></pre>
+
+<p>httpd<code>,</code> yum install httpd-devel` ， 这样通常会出奇怪做错。 尽量带上
+x86_64</p>
+
+<pre><code>当出现以上问题带来错误时， 记住要卸载所有的安装过的，
+</code></pre>
+
+<p>然后用规范的方式重新装。就能救回来了</p>
+
+<h3>install RVM</h3>
 
 <h3>安装系统需要的包</h3>
 
@@ -1073,6 +1468,35 @@ yum install openssl-devel
 /sbin/chkconfig --list mysql
 默认即可登陆， 账号root, 密码空
 </code></pre>
+
+<p>安装gem是会出现</p>
+
+<pre><code>uninitialized constant MysqlCompat::MysqlRes
+/usr/local/rvm/gems/ree-1.8.7-2012.02/gems/activesupport-2.3.8/lib/active_support/dependencies.rb:440:in `load_missing_constant'
+/usr/local/rvm/gems/ree-1.8.7-2012.02/gems/activesupport-2.3.8/lib/active_support/dependencies.rb:80:in `const_missing'
+/usr/local/rvm/gems/ree-1.8.7-2012.02/gems/activerecord-2.3.8/lib/active_record/connection_adapters/mysql_adapter.rb:9:in `define_all_hashes_method!'
+/usr/local/rvm/gems/ree-1.8.7-2012.02/gems/activerecord-2.3.8/lib/active_record/connection_adapters/mysql_adapter.rb:68:in `mysql_connection'
+</code></pre>
+
+<p>   /usr/local/rvm/gems/ree-1.8.7-2012.02/gems/activerecord-2.3.8/lib/active_record/connection_adapters/abstract/connection_pool.rb:223:in `send&#8217;</p>
+
+<p>这样的错误，解决办法：</p>
+
+<pre><code>env ARCHFLAGS="-arch x86_64" gem install mysql
+
+安装玩gem 后 ， 安照 `http://www.tmtm.org/en/mysql/ruby/
+</code></pre>
+
+<p>提示在安装mysql-ruby</p>
+
+<pre><code>wget http://files.rubyforge.vm.bytemark.co.uk/mysql-ruby/mysql-ruby-2.8.2.tar.gz
+tar -xzvf mysql-ruby-2.8.2.tar.gz
+cd mysql-ruby-2.8.2
+ruby extconf.rb --with-mysql-dir=/usr/local/mysql
+make install 
+</code></pre>
+
+<p>即可</p>
 
 <h3>安装imagemagick</h3>
 
@@ -1123,6 +1547,22 @@ yum install fftw3-devel fontconfig-devel libtool-ltdl-devel -y
 <p>=========================================</p>
 
 <pre><code>以上步骤有问题。
+
+yum install libmng-1.0.9-5.1.x86_64
+yum install qt-3.3.6-26.el5.x86_64
+yum install ghostscript
+yum install librsvg2.x86_64  librsvg2-devel.x86_64 
+yum install libwmf.x86_64 libwmf-devel.x86_64
+yum install ghostscript-devel
+yum install bzip2.x86_64  bzip2-devel.x86_64 bzip2-libs.x86_64 lbzip2.x86_64
+yum install lcms-devel.x86_64
+yum install libXt.x86_64  libXt-devel.x86_64 libXTrap.x86_64  libXTrap-devel.x86_64libXtst-devel.x86_64 libXtst.x86_64
+yum install libtiff.x86_64 libtiff-devel.x86_64 
+
+
+yum -y install gettext-devel
+yum -y install libtool*
+
 把本库里ImageMagick.tar.gz里软件全部装好就可使用。 很简单。 rpm -Uvh
 </code></pre>
 
@@ -1141,12 +1581,15 @@ gem install nokogiri -v=1.4.4
 gem install nokogiri -v=1.4.3.1
 gem install roo -v=1.9.6
 
-yum install aspell.x86_64  aspell-devel.x86_64 enchant-aspell.x86_64
-</code></pre>
+yum install aspell.x86_64  aspell-devel.x86_64 enchant-aspell.x86_64 aspell-en.x86_64   aspell-fr.x86_64  
+gem install raspell -v=1.2
 
-<p>aspell-en.x86_64   aspell-fr.x86_64</p>
-
-<pre><code>gem install raspell -v=1.2
+wget ftp://ftp.gnu.org/gnu/aspell/dict/ar/aspell6-ar-1.2-0.tar.bz2
+tar jxf aspell6-ar-1.2-0.tar.bz2
+cd aspell6-ar-1.2-0
+./configure
+make
+make install
 </code></pre>
 
 <h3>安装nginx</h3>
@@ -1180,6 +1623,8 @@ $ PASSENGER_NGINX_DIR=`passenger-config --root`/ext/nginx
 $ wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.31.tar.gz
 $ tar -xzvf pcre-8.31.tar.gz
 $ cd pcre-8.31
+$ ./configure 
+$ make &amp; make install
 $ PCRE_DIR=`pwd`
 </code></pre>
 
@@ -1267,6 +1712,47 @@ configure arguments: --prefix=/usr/local --sbin-path=/usr/local/sbin
 <p>这样可以看到输出。</p>
 
 <p>以上方法完全可以不用rvmsudo ..install_nginx….</p>
+
+<p>多次实验后，发现， passenger-install-apache2-module  或  passenger-install-nginx-module  这样装才有效果。 这样会在passenger gem包里生产 agent/Passenger&#8230; 文件，有这个nginx 才能跑起来</p>
+
+<pre><code>/usr/local/src/nginx-1.2.4
+/usr/local 
+--sbin-path=/usr/local/sbin  --conf-path=/etc/nginx/nginx.conf  --error-log-path=/var/log/nginx/error.log  --http-log-path=/var/log/nginx/access.log  --with-pcre=/usr/local/src/pcre-8.31   --with-http_gzip_static_module  --with-http_sub_module
+yes
+
+
+http://extralogical.net/articles/howto-compile-nginx-passenger.html
+</code></pre>
+
+<h4>另外</h4>
+
+<p> 如果多环境同时跑， 建议用 nginx + 反向代理 + apache来搞。
+两个nginx 很容易出问题， 编译的文件会被破坏掉。</p>
+
+<h4>注意####</h4>
+
+<pre><code>Passenger before v3.0.11 has issues with Ruby 1.9.3, 
+</code></pre>
+
+<p>开机自动启动：</p>
+
+<pre><code>chmod +x /etc/init.d/nginx 
+
+[root@p3100221 conf.d]# chkconfig --list nginx
+bash: chkconfig: command not found
+
+[root@p3100221 conf.d]# /sbin/chkconfig --list nginx
+nginx 服务支持 chkconfig，但它在任何级别中都没有被引用(运行“chkconfig --add nginx”)
+
+[root@p3100221 conf.d]# /sbin/chkconfig --add nginx
+[root@p3100221 conf.d]# /sbin/chkconfig --list nginx
+nginx           0:关闭    1:关闭    2:关闭    3:关闭    4:关闭    5:关闭    6:关闭
+
+[root@p3100221 conf.d]# /sbin/chkconfig  --level 2345 nginx on
+
+[root@p3100221 conf.d]# /sbin/chkconfig --list nginx
+nginx           0:关闭    1:关闭    2:启用    3:启用    4:启用    5:启用    6:关闭
+</code></pre>
 
 <h3>install memcache</h3>
 
@@ -1981,255 +2467,6 @@ Grep NOT
 200  Jason   Developer  Technology  $5,500
 400  Nisha   Manager    Marketing   $9,500
 </code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Integrate tire elasticsearch on bad server]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/"/>
-    <updated>2012-11-01T13:24:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server</id>
-    <content type="html"><![CDATA[<p>Installing the JRE
-Type the following commands into your SSH terminal.</p>
-
-<pre><code>apt-get install openjdk-6-jdk 
-</code></pre>
-
-<p>You should also have JDK 6 or above installed.</p>
-
-<pre><code>$ curl -k -L -o elasticsearch-0.19.0.tar.gz http://github.com/downloads/elasticsearch/elasticsearch/elasticsearch-0.19.0.tar.gz
-$ tar -zxvf elasticsearch-0.19.0.tar.gz
-$ ./elasticsearch-0.19.0/bin/elasticsearch -f
-</code></pre>
-
-<p>How to make it manage by ubuntu better.</p>
-
-<pre><code>$ cp ./elasticsearch-0.19 /user/local/elasticsearch
-</code></pre>
-
-<p>make <code>/etc/init.d/elasticsearch</code></p>
-
-<pre><code>$ vi /etc/init.d/elasticsearch
-
-
-### END INIT INFO
-ES_HOME=/usr/local/elasticsearch
-export ES_MIN_MEM=32m
-export ES_MAX_MEM=128m
-DAEMON=$ES_HOME/bin/elasticsearch
-NAME=elasticsearch
-DESC=elasticsearch
-PID_FILE=/var/run/$NAME.pid
-LOG_DIR=/var/log/$NAME
-DATA_DIR=/var/lib/$NAME
-WORK_DIR=/tmp/$NAME
-CONFIG_FILE=/etc/$NAME/elasticsearch.yml
-DAEMON_OPTS="-p $PID_FILE -Des.config=$CONFIG_FILE -Des.path.home=$ES_HOME -Des.path.logs=$LOG_DIR -        Des.path.data=$DATA_DIR -Des.path.work=$WORK_DIR"
-
-
-test -x $DAEMON || exit 0
-
-set -e
-
-case "$1" in
-  start)
-    echo -n "Starting $DESC: "
-    mkdir -p $LOG_DIR $DATA_DIR $WORK_DIR
-    if start-stop-daemon --start --pidfile $PID_FILE --startas $DAEMON -- $DAEMON_OPTS
-    then
-        echo "started."
-    else
-        echo "failed."
-    fi
-    ;;
-  stop)
-    echo -n "Stopping $DESC: "
-    if start-stop-daemon --stop --pidfile $PID_FILE
-    then
-        echo "stopped."
-    else
-        echo "failed."
-    fi
-    ;;
-  restart|force-reload)
-    ${0} stop
-    sleep 0.5
-    ${0} start
-    ;;
-  *)
-    N=/etc/init.d/$NAME
-    echo "Usage: $N {start|stop|restart|force-reload}" &gt;&amp;2
-    exit 1
-    ;;
-esac
-exit 0
-</code></pre>
-
-<p>To a number suitable for the size of your forum.</p>
-
-<p>I reccomend approximately <code>256mb</code> for the MIN_MEM and <code>1 GB</code> for the MAX_MEM per <code>1 million</code> posts on your forum.</p>
-
-<pre><code>1 Million Posts: 256m:1g
-2 Million Posts: 512m:2g
-3 Million Posts: 768m:3g
-4 Million Posts: 1024m:4g
-etc
-</code></pre>
-
-<p>This will not mean the service will use all that available memory, however it will have it at its disposal if required.</p>
-
-<p>So for example a <code>3 Million</code> Post forum would edit</p>
-
-<pre><code>export ES_MIN_MEM=768m
-export ES_MAX_MEM=3g
-</code></pre>
-
-<p>make the script executable and start automaticly.</p>
-
-<pre><code>chmod a+x /etc/init.d/elasticsearch 
-update-rc.d elasticsearch defaults
-/etc/init.d/elasticsearch start
-
-vi /etc/elasticsearch/elasticsearch.yml
-</code></pre>
-
-<p> and add this</p>
-
-<pre><code>#/etc/elasticsearch/elasticsearch.yml
-network :
-  host :  127.0.0.1
-path:
-  logs: /var/log/elasticsearch
-  data: /var/data/elasticsearch
-
-cluster.name: PUT-SOMETHING-UNIQUE-HERE
-</code></pre>
-
-<p>make data folder</p>
-
-<pre><code>mkdir -p  /var/data/elasticsearch
-</code></pre>
-
-<p>make sure  <code>127.0.0.1 localhost</code> in your <code>/ect/hosts</code>, this is very important, it&#8217;s waste of my time.</p>
-
-<p>now you can start to build the index.</p>
-
-<pre><code>RAILS_ENV=production rake environment tire:import CLASS='List'
-</code></pre>
-
-<p>on mac, there is  a simpler way:</p>
-
-<pre><code>brew install elasticsearch
-elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elasticsearch.yml
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[add user to group]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group/"/>
-    <updated>2012-10-30T16:55:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/10/30/add-user-to-group</id>
-    <content type="html"><![CDATA[<p>How can I add a user to a group under Linux operating system?</p>
-
-<p>You can use the useradd or usermod commands to add a user to a group. The useradd command creates a new user or update default new user information. The usermod command modifies a user account i.e. it is useful to add user to existing group. There are two types of group. First is primary user group and other is secondary group. All user account related information is stored in <code>/etc/passwd</code>, <code>/etc/shadow</code> and <code>/etc/group</code> files to store user information.</p>
-
-<h3>useradd Example - Add A New User To Secondary Group</h3>
-
-<p>You need to the useradd command to add new users to existing group (or create a new group and then add user). If group does not exist, create it. The syntax is as follows:</p>
-
-<pre><code>useradd -G {group-name} username
-</code></pre>
-
-<p>In this example, create a new user called vivek and add it to group called developers. First login as a root user (make sure group developers exists), enter:</p>
-
-<pre><code># grep developers /etc/group
-</code></pre>
-
-<p>Output:</p>
-
-<pre><code>developers:x:1124:
-</code></pre>
-
-<p>If you do not see any output then you need to add group developers using groupadd command:</p>
-
-<pre><code># groupadd developers
-</code></pre>
-
-<p>Next, add a user called vivek to group developers:</p>
-
-<pre><code># useradd -G developers vivek
-</code></pre>
-
-<p>Setup password for user vivek:</p>
-
-<pre><code># passwd vivek
-</code></pre>
-
-<p>Ensure that user added properly to group developers:</p>
-
-<pre><code># id vivek
-</code></pre>
-
-<p>Output:</p>
-
-<pre><code>uid=1122(vivek) gid=1125(vivek) groups=1125(vivek),1124(developers)
-</code></pre>
-
-<p>Please note that capital <code>G (-G)</code> option add user to a list of supplementary groups. Each group is separated from the next by a comma, with no intervening whitespace. For example, add user jerry to groups admins, ftp, www, and developers, enter:</p>
-
-<pre><code># useradd -G admins,ftp,www,developers jerry
-</code></pre>
-
-<h3>useradd example - Add a new user to primary group</h3>
-
-<p>To add a user tony to group developers use following command:</p>
-
-<pre><code># useradd -g developers tony
-# id tony
-</code></pre>
-
-<p>Sample outputs:</p>
-
-<pre><code>uid=1123(tony) gid=1124(developers) groups=1124(developers)
-</code></pre>
-
-<p>Please note that small -g option add user to initial login group (primary group). The group name must exist. A group number must refer to an already existing group.</p>
-
-<pre><code>usermod example - Add a existing user to existing group
-</code></pre>
-
-<p>Add existing user tony to ftp supplementary/secondary group with usermod command using -a option ~ i.e. add the user to the supplemental group(s). Use only with -G option :</p>
-
-<pre><code># usermod -a -G ftp tony
-</code></pre>
-
-<p>Change existing user tony primary group to www:</p>
-
-<pre><code># usermod -g www tony
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[MySQL 'Incorrect key file for table' error]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/"/>
-    <updated>2012-10-30T02:47:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/10/30/mysql-incorrect-key-file-for-table-error</id>
-    <content type="html"><![CDATA[<p>When saving a record to a MySQL table the other day I got the error message &#8220;Incorrect key file for table &#8216;mytable&#8217;; try to repair it&#8221;. I am uncertain why the error occured and how to ensure it doesn&#8217;t happen again in the future but a quick fix for the time being is simple.</p>
-
-<h2>How to repair a MySQL table</h2>
-
-<p>All you need to do is to repair the table by running the following SQL command, where &#8220;mytable&#8221; is the name of the table that gave the error:</p>
-
-<pre><code>REPAIR TABLE `mytable`;
-</code></pre>
-
-<p>You can run this from e.g. the MySQL CLI or phpMyAdmin. From phpMyAdmin select the table, then &#8220;Operations&#8221; from the navigation tabs in the right frame above the table info; then &#8220;Repair Table&#8221; from the &#8220;Table maintenance&#8221; options at the bottom of the page.</p>
-
-<h2>When the table is /tmp/#sql_xxx_x.MYI</h2>
-
-<p>If the error looks like &#8220;Incorrect key file for table &#8216;/tmp/#sql_xxx_x.MYI&#8217;; try to repair it&#8221; where it refers to a temporary location on the filesystem, it&#8217;s likely you&#8217;ve run out of diskspace. Read my follow up post for more information.</p>
 ]]></content>
   </entry>
   

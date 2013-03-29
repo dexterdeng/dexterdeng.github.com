@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: blanee | 脑波网]]></title>
+  <link href="http://dexterdeng.github.com/blog/categories/blanee/atom.xml" rel="self"/>
+  <link href="http://dexterdeng.github.com/"/>
+  <updated>2013-03-29T16:56:48+08:00</updated>
+  <id>http://dexterdeng.github.com/</id>
+  <author>
+    <name><![CDATA[Dexter Deng]]></name>
+    <email><![CDATA[dexterdeng@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[服务器宕机时间]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/03/20/fu-wu-qi-dang-ji-shi-jian/"/>
+    <updated>2013-03-20T01:33:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/03/20/fu-wu-qi-dang-ji-shi-jian</id>
+    <content type="html"><![CDATA[<p>今天服务器意外宕机， 原因尚未查明，  查明后补上。</p>
+
+<p>时间是中午1点， 服务器忽然变得超慢, 迅速没响应。 这时候我很愚蠢，
+本来有一点时间输入一条命令的，结果我输了个git pull.
+如果当时用top查看谁在坏事，或许结果会不一样。</p>
+
+<p>2点， 服务器可以ping通， 但是，只hudson 启动。
+并机房的人说，机器出现io错误。  根源应该是这个。</p>
+
+<pre><code>scsi 0:0:1:0: Attached scsi generic sg1 type 0
+sd 0:1:0:0: Attached scsi generic sg2 type 0
+floppy0: no floppy controllers found
+work still pending
+lp: driver loaded but no devices found
+ACPI: Power Button (FF) [PWRF]
+ACPI: Mapper loaded
+dell-wmi: No known WMI GUID found
+ACPI Exception (evregion-0424): AE_SUPPORT, Returned by Handler for [DataTable] [20060707]
+ACPI Error (psparse-0537): Method parse/execution failed [\_SB_.PMI0._GHL] (Node ffff81033005b8b0), AE_SUPPORT
+ACPI Error (psparse-0537): Method parse/execution failed [\_SB_.PMI0._PMC] (Node ffff81033005b8f0), AE_SUPPORT
+ACPI Exception (power_meter-0759): AE_SUPPORT, Evaluating _PMC [20060707]
+</code></pre>
+
+<p>几经周折，工作人员执意reloadserver, 3小时后， 旧hdd用usb线插入机器。
+(这里要检查是不是usb2.0. 否则拷贝很慢。</p>
+
+<pre><code>lsmod | grep hci
+The output should look something like this:
+
+uhci_hcd               22404  0 
+ehci_hcd               34688  0 
+usbcore               134576  5 oss_usb,usbhid,uhci_hcd,ehci_hcd
+If it only shows uhci and not ehci, then the usb 2.0 drivers just aren't loading）
+</code></pre>
+
+<p>下面事识别旧hdd。 这里比较麻烦，因为hdd上做了raid， 能看到的事linux lvm.
+不知道fs type. 导致 mount  不成功。</p>
+
+<h3>详细挂载步骤：…</h3>
+
+<h4>查看设备名称。</h4>
+
+<pre><code>cd /dev/disk
+
+tree -L 2
+.
+|-- by-id
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04 -&gt; ../../sda
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04-part1 -&gt; ../../sda1
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04-part2 -&gt; ../../sda2
+|   |-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003 -&gt; ../../sdb
+|   |-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003-part1 -&gt; ../../sdb1
+|   `-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003-part2 -&gt; ../../sdb2
+|-- by-label
+|   `-- boot -&gt; ../../sdb1
+|-- by-path
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0 -&gt; ../../sdb
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0-part1 -&gt; ../../sdb1
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0-part2 -&gt; ../../sdb2
+|   |-- pci-0000:02:00.0-scsi-0:1:0:0 -&gt; ../../sda
+|   |-- pci-0000:02:00.0-scsi-0:1:0:0-part1 -&gt; ../../sda1
+|   `-- pci-0000:02:00.0-scsi-0:1:0:0-part2 -&gt; ../../sda2
+`-- by-uuid
+    |-- 6e483701-3665-4369-b304-a0b997ca810d -&gt; ../../sda1
+    `-- f38282ea-3a5b-4b90-b48b-2b8573b08d9e -&gt; ../../sdb1
+
+可以看出， sdb1, sdb2 就是usb 连接的hdd。
+</code></pre>
+
+<h4>挂载失败</h4>
+
+<pre><code>mkdir /mnt/u2
+mount /dev/sdb2 /mnt/u2 失败，尝试不同文件系统也不能成功。
+</code></pre>
+
+<p>使用 fdlisk 查看。</p>
+
+<pre><code>[root@p3100221 log]# /sbin/fdisk -l
+
+Disk /dev/sda: 250.4 GB, 250450280448 bytes
+255 heads, 63 sectors/track, 30448 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1          32      257008+  83  Linux
+/dev/sda2              33       30448   244316520   8e  Linux LVM
+
+Disk /dev/sdb: 251.0 GB, 251059544064 bytes
+255 heads, 63 sectors/track, 30522 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1   *           1          32      257008+  83  Linux
+/dev/sdb2              33       30448   244316520   8e  Linux LVM
+</code></pre>
+
+<p> 由此可以断定， /dev/sdb2y而是一个逻辑分区。 因为做了raid的原因。
+所以不可以用 mount -t
+的方式挂载，而`而应该吧逻辑分区挂到某地方,而这种分区通常名字叫 /dev/VolGroup 之类</p>
+
+<h4>识别</h4>
+
+<p>/dev里看到一个 VolGroup, 里面有2,3个文件， 是一个整体。</p>
+
+<h5>为什么有2个Linux LVM, 却只有一个 VolGroup?</h5>
+
+<p>由此想到，两个电脑上本来都有各自LVM， VolGroup重名也说不定。
+网上搜帖子进一步应证明我的想法。 网上找到一些方法改名。下面事我的做法。</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgscan 
+Reading all physical volumes.  This may take a while...
+Found volume group "VolGroup" using metadata type lvm2
+Found volume group "VolGroup" using metadata type lvm2
+</code></pre>
+
+<h4>重命名VolGroup</h4>
+
+<p>查看uuid， 根据uuid重命名.</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgs -v
+Finding all volume groups
+Finding volume group "VolGroup"
+Archiving volume group "VolGroup" metadata (seqno 3).
+Archiving volume group "VolGroup" metadata (seqno 3).
+Creating volume group backup "/etc/lvm/backup/VolGroup" (seqno 3).
+Finding volume group "VolGroup"
+Archiving volume group "VolGroup" metadata (seqno 3).
+Archiving volume group "VolGroup" metadata (seqno 3).
+Creating volume group backup "/etc/lvm/backup/VolGroup" (seqno 3).
+VG       Attr   Ext    #PV #LV #SN VSize   VFree VG UUID                               
+VolGroup wz--n- 32.00M   1   2   0 232.97G    0  DS7moo-4w7q-ehNa-hT23-8Xvo-52eu-dP11PE
+VolGroup wz--n- 32.00M   1   2   0 232.97G    0  VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp
+</code></pre>
+
+<p>将VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp 重命名为 VolGroup01</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgrename VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp VolGroup01
+Volume group "VolGroup" successfully renamed to "VolGroup01"
+</code></pre>
+
+<p>至此, 我们就可以看到2个group，但相应文件并没产生， （/dev/VolGroup01
+有， /dev/VolGroupm没有了）</p>
+
+<pre><code>重新产生文件
+/usr/sbin/lvchange VolGroup01 -a y   #means activate VolGroup01
+
+/usr/sbin/lvscan
+</code></pre>
+
+<h4>现在可以挂在了h</h4>
+
+<pre><code>mount /dev/VolGroup01/lv_root /mnt/u1
+mount /dev/VolGroup/lv_root   /mnt/u2
+</code></pre>
+
+<h4>千万主注意，</h4>
+
+<p>因为fstab里使用了这个名称，所以，用完一定要确保原本的VolGroup依然存在</p>
+
+<pre><code>umount /mnt/u1
+umount /mnt/u2
+/usr/sbin/vgrename VolGroup VolGroupold
+/usr/sbin/vgrename VolGroup01 VolGroup
+
+做这个操作因为我们的VolGroup刚好不是新hdd了。 
+</code></pre>
+
+<p>如果 umount /mnt/u2 时出现 device is busy</p>
+
+<pre><code> /sbin/fuser  -m -v /mnt/u2
+</code></pre>
+
+<p>杀死用它的进程即可。</p>
+]]></content>
+  </entry>
+  
+</feed>

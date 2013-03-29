@@ -4,7 +4,7 @@
   <title><![CDATA[Category: system | 脑波网]]></title>
   <link href="http://dexterdeng.github.com/blog/categories/system/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2013-01-18T18:15:44+08:00</updated>
+  <updated>2013-03-29T16:56:48+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -418,6 +418,8 @@ OpenDKIM版本是最新的，有人维护的。比之于老掉牙的DomainKeys�
 <pre><code>rpm -ivh dk-milter-1.0.2-1.x86_64.rpm 
 </code></pre>
 
+<p>切记使用服务器上那个，否则装起来很麻烦</p>
+
 <h4>Modify the default dk-milter configuration</h4>
 
 <p>The RPM you installed copied the necessary binaries and default configuration files for dk-milter. However, we won’t be using the default settings. Because you already chose a selector, created keys, and set up your DNS records when you set up OpenDKIM, we can re-use the same selector, keys, and DNS records in dk-milter with a few simple modifications.</p>
@@ -691,7 +693,20 @@ X-Authentication-Warning: p3100221.pubip.serverbeach.com: nginx set sender to no
     <link href="http://dexterdeng.github.com/blog/2013/01/07/setup-new-environment/"/>
     <updated>2013-01-07T13:32:00+08:00</updated>
     <id>http://dexterdeng.github.com/blog/2013/01/07/setup-new-environment</id>
-    <content type="html"><![CDATA[<h3>install RVM</h3>
+    <content type="html"><![CDATA[<h3>事前注意</h3>
+
+<pre><code>如果事64位的机器，千万不要像这样随便装东西， 比如 `yum install
+</code></pre>
+
+<p>httpd<code>,</code> yum install httpd-devel` ， 这样通常会出奇怪做错。 尽量带上
+x86_64</p>
+
+<pre><code>当出现以上问题带来错误时， 记住要卸载所有的安装过的，
+</code></pre>
+
+<p>然后用规范的方式重新装。就能救回来了</p>
+
+<h3>install RVM</h3>
 
 <h3>安装系统需要的包</h3>
 
@@ -711,6 +726,35 @@ yum install openssl-devel
 /sbin/chkconfig --list mysql
 默认即可登陆， 账号root, 密码空
 </code></pre>
+
+<p>安装gem是会出现</p>
+
+<pre><code>uninitialized constant MysqlCompat::MysqlRes
+/usr/local/rvm/gems/ree-1.8.7-2012.02/gems/activesupport-2.3.8/lib/active_support/dependencies.rb:440:in `load_missing_constant'
+/usr/local/rvm/gems/ree-1.8.7-2012.02/gems/activesupport-2.3.8/lib/active_support/dependencies.rb:80:in `const_missing'
+/usr/local/rvm/gems/ree-1.8.7-2012.02/gems/activerecord-2.3.8/lib/active_record/connection_adapters/mysql_adapter.rb:9:in `define_all_hashes_method!'
+/usr/local/rvm/gems/ree-1.8.7-2012.02/gems/activerecord-2.3.8/lib/active_record/connection_adapters/mysql_adapter.rb:68:in `mysql_connection'
+</code></pre>
+
+<p>   /usr/local/rvm/gems/ree-1.8.7-2012.02/gems/activerecord-2.3.8/lib/active_record/connection_adapters/abstract/connection_pool.rb:223:in `send'</p>
+
+<p>这样的错误，解决办法：</p>
+
+<pre><code>env ARCHFLAGS="-arch x86_64" gem install mysql
+
+安装玩gem 后 ， 安照 `http://www.tmtm.org/en/mysql/ruby/
+</code></pre>
+
+<p>提示在安装mysql-ruby</p>
+
+<pre><code>wget http://files.rubyforge.vm.bytemark.co.uk/mysql-ruby/mysql-ruby-2.8.2.tar.gz
+tar -xzvf mysql-ruby-2.8.2.tar.gz
+cd mysql-ruby-2.8.2
+ruby extconf.rb --with-mysql-dir=/usr/local/mysql
+make install 
+</code></pre>
+
+<p>即可</p>
 
 <h3>安装imagemagick</h3>
 
@@ -761,6 +805,22 @@ yum install fftw3-devel fontconfig-devel libtool-ltdl-devel -y
 <p>=========================================</p>
 
 <pre><code>以上步骤有问题。
+
+yum install libmng-1.0.9-5.1.x86_64
+yum install qt-3.3.6-26.el5.x86_64
+yum install ghostscript
+yum install librsvg2.x86_64  librsvg2-devel.x86_64 
+yum install libwmf.x86_64 libwmf-devel.x86_64
+yum install ghostscript-devel
+yum install bzip2.x86_64  bzip2-devel.x86_64 bzip2-libs.x86_64 lbzip2.x86_64
+yum install lcms-devel.x86_64
+yum install libXt.x86_64  libXt-devel.x86_64 libXTrap.x86_64  libXTrap-devel.x86_64libXtst-devel.x86_64 libXtst.x86_64
+yum install libtiff.x86_64 libtiff-devel.x86_64 
+
+
+yum -y install gettext-devel
+yum -y install libtool*
+
 把本库里ImageMagick.tar.gz里软件全部装好就可使用。 很简单。 rpm -Uvh
 </code></pre>
 
@@ -779,12 +839,15 @@ gem install nokogiri -v=1.4.4
 gem install nokogiri -v=1.4.3.1
 gem install roo -v=1.9.6
 
-yum install aspell.x86_64  aspell-devel.x86_64 enchant-aspell.x86_64
-</code></pre>
+yum install aspell.x86_64  aspell-devel.x86_64 enchant-aspell.x86_64 aspell-en.x86_64   aspell-fr.x86_64  
+gem install raspell -v=1.2
 
-<p>aspell-en.x86_64   aspell-fr.x86_64</p>
-
-<pre><code>gem install raspell -v=1.2
+wget ftp://ftp.gnu.org/gnu/aspell/dict/ar/aspell6-ar-1.2-0.tar.bz2
+tar jxf aspell6-ar-1.2-0.tar.bz2
+cd aspell6-ar-1.2-0
+./configure
+make
+make install
 </code></pre>
 
 <h3>安装nginx</h3>
@@ -818,6 +881,8 @@ $ PASSENGER_NGINX_DIR=`passenger-config --root`/ext/nginx
 $ wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.31.tar.gz
 $ tar -xzvf pcre-8.31.tar.gz
 $ cd pcre-8.31
+$ ./configure 
+$ make &amp; make install
 $ PCRE_DIR=`pwd`
 </code></pre>
 
@@ -905,6 +970,47 @@ configure arguments: --prefix=/usr/local --sbin-path=/usr/local/sbin
 <p>这样可以看到输出。</p>
 
 <p>以上方法完全可以不用rvmsudo ..install_nginx….</p>
+
+<p>多次实验后，发现， passenger-install-apache2-module  或  passenger-install-nginx-module  这样装才有效果。 这样会在passenger gem包里生产 agent/Passenger... 文件，有这个nginx 才能跑起来</p>
+
+<pre><code>/usr/local/src/nginx-1.2.4
+/usr/local 
+--sbin-path=/usr/local/sbin  --conf-path=/etc/nginx/nginx.conf  --error-log-path=/var/log/nginx/error.log  --http-log-path=/var/log/nginx/access.log  --with-pcre=/usr/local/src/pcre-8.31   --with-http_gzip_static_module  --with-http_sub_module
+yes
+
+
+http://extralogical.net/articles/howto-compile-nginx-passenger.html
+</code></pre>
+
+<h4>另外</h4>
+
+<p> 如果多环境同时跑， 建议用 nginx + 反向代理 + apache来搞。
+两个nginx 很容易出问题， 编译的文件会被破坏掉。</p>
+
+<h4>注意####</h4>
+
+<pre><code>Passenger before v3.0.11 has issues with Ruby 1.9.3, 
+</code></pre>
+
+<p>开机自动启动：</p>
+
+<pre><code>chmod +x /etc/init.d/nginx 
+
+[root@p3100221 conf.d]# chkconfig --list nginx
+bash: chkconfig: command not found
+
+[root@p3100221 conf.d]# /sbin/chkconfig --list nginx
+nginx 服务支持 chkconfig，但它在任何级别中都没有被引用(运行“chkconfig --add nginx”)
+
+[root@p3100221 conf.d]# /sbin/chkconfig --add nginx
+[root@p3100221 conf.d]# /sbin/chkconfig --list nginx
+nginx           0:关闭    1:关闭    2:关闭    3:关闭    4:关闭    5:关闭    6:关闭
+
+[root@p3100221 conf.d]# /sbin/chkconfig  --level 2345 nginx on
+
+[root@p3100221 conf.d]# /sbin/chkconfig --list nginx
+nginx           0:关闭    1:关闭    2:启用    3:启用    4:启用    5:启用    6:关闭
+</code></pre>
 
 <h3>install memcache</h3>
 

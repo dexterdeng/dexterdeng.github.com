@@ -9,8 +9,8 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="开博了，记录我的脑波。。
-">
+  <meta name="description" content="Installing the JRE
+Type the following commands into your SSH terminal. apt-get install openjdk-6-jdk You should also have JDK 6 or above installed &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -73,6 +73,336 @@
       
   <header>
     
+      <h1 class="entry-title"><a href="/blog/2012/11/01/integrate-tire-plus-elasticsearch-on-bad-server/">Integrate Tire Elasticsearch on Bad Server</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-01T13:24:00+08:00" pubdate data-updated="true">Nov 1<span>st</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Installing the JRE
+Type the following commands into your SSH terminal.</p>
+
+<pre><code>apt-get install openjdk-6-jdk 
+</code></pre>
+
+<p>You should also have JDK 6 or above installed.</p>
+
+<pre><code>$ curl -k -L -o elasticsearch-0.19.0.tar.gz http://github.com/downloads/elasticsearch/elasticsearch/elasticsearch-0.19.0.tar.gz
+$ tar -zxvf elasticsearch-0.19.0.tar.gz
+$ ./elasticsearch-0.19.0/bin/elasticsearch -f
+</code></pre>
+
+<p>How to make it manage by ubuntu better.</p>
+
+<pre><code>$ cp ./elasticsearch-0.19 /user/local/elasticsearch
+</code></pre>
+
+<p>make <code>/etc/init.d/elasticsearch</code></p>
+
+<pre><code>$ vi /etc/init.d/elasticsearch
+
+
+### END INIT INFO
+ES_HOME=/usr/local/elasticsearch
+export ES_MIN_MEM=32m
+export ES_MAX_MEM=128m
+DAEMON=$ES_HOME/bin/elasticsearch
+NAME=elasticsearch
+DESC=elasticsearch
+PID_FILE=/var/run/$NAME.pid
+LOG_DIR=/var/log/$NAME
+DATA_DIR=/var/lib/$NAME
+WORK_DIR=/tmp/$NAME
+CONFIG_FILE=/etc/$NAME/elasticsearch.yml
+DAEMON_OPTS="-p $PID_FILE -Des.config=$CONFIG_FILE -Des.path.home=$ES_HOME -Des.path.logs=$LOG_DIR -        Des.path.data=$DATA_DIR -Des.path.work=$WORK_DIR"
+
+
+test -x $DAEMON || exit 0
+
+set -e
+
+case "$1" in
+  start)
+    echo -n "Starting $DESC: "
+    mkdir -p $LOG_DIR $DATA_DIR $WORK_DIR
+    if start-stop-daemon --start --pidfile $PID_FILE --startas $DAEMON -- $DAEMON_OPTS
+    then
+        echo "started."
+    else
+        echo "failed."
+    fi
+    ;;
+  stop)
+    echo -n "Stopping $DESC: "
+    if start-stop-daemon --stop --pidfile $PID_FILE
+    then
+        echo "stopped."
+    else
+        echo "failed."
+    fi
+    ;;
+  restart|force-reload)
+    ${0} stop
+    sleep 0.5
+    ${0} start
+    ;;
+  *)
+    N=/etc/init.d/$NAME
+    echo "Usage: $N {start|stop|restart|force-reload}" &gt;&amp;2
+    exit 1
+    ;;
+esac
+exit 0
+</code></pre>
+
+<p>To a number suitable for the size of your forum.</p>
+
+<p>I reccomend approximately <code>256mb</code> for the MIN_MEM and <code>1 GB</code> for the MAX_MEM per <code>1 million</code> posts on your forum.</p>
+
+<pre><code>1 Million Posts: 256m:1g
+2 Million Posts: 512m:2g
+3 Million Posts: 768m:3g
+4 Million Posts: 1024m:4g
+etc
+</code></pre>
+
+<p>This will not mean the service will use all that available memory, however it will have it at its disposal if required.</p>
+
+<p>So for example a <code>3 Million</code> Post forum would edit</p>
+
+<pre><code>export ES_MIN_MEM=768m
+export ES_MAX_MEM=3g
+</code></pre>
+
+<p>make the script executable and start automaticly.</p>
+
+<pre><code>chmod a+x /etc/init.d/elasticsearch 
+update-rc.d elasticsearch defaults
+/etc/init.d/elasticsearch start
+
+vi /etc/elasticsearch/elasticsearch.yml
+</code></pre>
+
+<p> and add this</p>
+
+<pre><code>#/etc/elasticsearch/elasticsearch.yml
+network :
+  host :  127.0.0.1
+path:
+  logs: /var/log/elasticsearch
+  data: /var/data/elasticsearch
+
+cluster.name: PUT-SOMETHING-UNIQUE-HERE
+</code></pre>
+
+<p>make data folder</p>
+
+<pre><code>mkdir -p  /var/data/elasticsearch
+</code></pre>
+
+<p>make sure  <code>127.0.0.1 localhost</code> in your <code>/ect/hosts</code>, this is very important, it&#8217;s waste of my time.</p>
+
+<p>now you can start to build the index.</p>
+
+<pre><code>RAILS_ENV=production rake environment tire:import CLASS='List'
+</code></pre>
+
+<p>on mac, there is  a simpler way:</p>
+
+<pre><code>brew install elasticsearch
+elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elasticsearch.yml
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/10/30/add-user-to-group/">Add User to Group</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-10-30T16:55:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>How can I add a user to a group under Linux operating system?</p>
+
+<p>You can use the useradd or usermod commands to add a user to a group. The useradd command creates a new user or update default new user information. The usermod command modifies a user account i.e. it is useful to add user to existing group. There are two types of group. First is primary user group and other is secondary group. All user account related information is stored in <code>/etc/passwd</code>, <code>/etc/shadow</code> and <code>/etc/group</code> files to store user information.</p>
+
+<h3>useradd Example - Add A New User To Secondary Group</h3>
+
+<p>You need to the useradd command to add new users to existing group (or create a new group and then add user). If group does not exist, create it. The syntax is as follows:</p>
+
+<pre><code>useradd -G {group-name} username
+</code></pre>
+
+<p>In this example, create a new user called vivek and add it to group called developers. First login as a root user (make sure group developers exists), enter:</p>
+
+<pre><code># grep developers /etc/group
+</code></pre>
+
+<p>Output:</p>
+
+<pre><code>developers:x:1124:
+</code></pre>
+
+<p>If you do not see any output then you need to add group developers using groupadd command:</p>
+
+<pre><code># groupadd developers
+</code></pre>
+
+<p>Next, add a user called vivek to group developers:</p>
+
+<pre><code># useradd -G developers vivek
+</code></pre>
+
+<p>Setup password for user vivek:</p>
+
+<pre><code># passwd vivek
+</code></pre>
+
+<p>Ensure that user added properly to group developers:</p>
+
+<pre><code># id vivek
+</code></pre>
+
+<p>Output:</p>
+
+<pre><code>uid=1122(vivek) gid=1125(vivek) groups=1125(vivek),1124(developers)
+</code></pre>
+
+<p>Please note that capital <code>G (-G)</code> option add user to a list of supplementary groups. Each group is separated from the next by a comma, with no intervening whitespace. For example, add user jerry to groups admins, ftp, www, and developers, enter:</p>
+
+<pre><code># useradd -G admins,ftp,www,developers jerry
+</code></pre>
+
+<h3>useradd example - Add a new user to primary group</h3>
+
+<p>To add a user tony to group developers use following command:</p>
+
+<pre><code># useradd -g developers tony
+# id tony
+</code></pre>
+
+<p>Sample outputs:</p>
+
+<pre><code>uid=1123(tony) gid=1124(developers) groups=1124(developers)
+</code></pre>
+
+<p>Please note that small -g option add user to initial login group (primary group). The group name must exist. A group number must refer to an already existing group.</p>
+
+<pre><code>usermod example - Add a existing user to existing group
+</code></pre>
+
+<p>Add existing user tony to ftp supplementary/secondary group with usermod command using -a option ~ i.e. add the user to the supplemental group(s). Use only with -G option :</p>
+
+<pre><code># usermod -a -G ftp tony
+</code></pre>
+
+<p>Change existing user tony primary group to www:</p>
+
+<pre><code># usermod -g www tony
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/10/30/mysql-incorrect-key-file-for-table-error/">MySQL &#8216;Incorrect Key File for Table&#8217; Error</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-10-30T02:47:00+08:00" pubdate data-updated="true">Oct 30<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>When saving a record to a MySQL table the other day I got the error message &#8220;Incorrect key file for table &#8216;mytable&#8217;; try to repair it&#8221;. I am uncertain why the error occured and how to ensure it doesn&#8217;t happen again in the future but a quick fix for the time being is simple.</p>
+
+<h2>How to repair a MySQL table</h2>
+
+<p>All you need to do is to repair the table by running the following SQL command, where &#8220;mytable&#8221; is the name of the table that gave the error:</p>
+
+<pre><code>REPAIR TABLE `mytable`;
+</code></pre>
+
+<p>You can run this from e.g. the MySQL CLI or phpMyAdmin. From phpMyAdmin select the table, then &#8220;Operations&#8221; from the navigation tabs in the right frame above the table info; then &#8220;Repair Table&#8221; from the &#8220;Table maintenance&#8221; options at the bottom of the page.</p>
+
+<h2>When the table is /tmp/#sql_xxx_x.MYI</h2>
+
+<p>If the error looks like &#8220;Incorrect key file for table &#8216;/tmp/#sql_xxx_x.MYI&#8217;; try to repair it&#8221; where it refers to a temporary location on the filesystem, it&#8217;s likely you&#8217;ve run out of diskspace. Read my follow up post for more information.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h1 class="entry-title"><a href="/blog/2012/10/23/kai-bo-liao-%2Cji-lu-wo-de-nao-bo-.-./">开博了，记录我的脑波</a></h1>
     
     
@@ -119,23 +449,23 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/03/20/fu-wu-qi-dang-ji-shi-jian/">服务器宕机时间</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/02/05/server-issues-fixing/">server issues fixing</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/19/ruby-1-dot-9-3-env/">ruby 1.9.3 env</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/01/18/crontab-issues-with-rvm/">crontab issues with rvm </a>
       </li>
     
       <li class="post">
         <a href="/blog/2013/01/16/install-hudson/">install hudson</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/16/wang-zhan-gong-ji-shi-li/">网站攻击实例</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/15/systembei-wang-lu/">system备忘录</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/15/install-tivoli/">install tivoli</a>
       </li>
     
   </ul>

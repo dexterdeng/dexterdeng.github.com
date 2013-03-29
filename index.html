@@ -9,7 +9,9 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="I encountered these issues today. I can&#8217;t set default rvm to different users. like hudson and nginx. solution: PATH=/usr/kerberos/sbin:/usr/ &hellip;">
+  <meta name="description" content="今天服务器意外宕机， 原因尚未查明， 查明后补上。 时间是中午1点， 服务器忽然变得超慢, 迅速没响应。 这时候我很愚蠢，
+本来有一点时间输入一条命令的，结果我输了个git pull.
+如果当时用top查看谁在坏事，或许结果会不一样。 2点， 服务器可以ping通， 但是，只hudson 启动。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +68,467 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/03/20/fu-wu-qi-dang-ji-shi-jian/">服务器宕机时间</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-20T01:33:00+08:00" pubdate data-updated="true">Mar 20<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>今天服务器意外宕机， 原因尚未查明，  查明后补上。</p>
+
+<p>时间是中午1点， 服务器忽然变得超慢, 迅速没响应。 这时候我很愚蠢，
+本来有一点时间输入一条命令的，结果我输了个git pull.
+如果当时用top查看谁在坏事，或许结果会不一样。</p>
+
+<p>2点， 服务器可以ping通， 但是，只hudson 启动。
+并机房的人说，机器出现io错误。  根源应该是这个。</p>
+
+<pre><code>scsi 0:0:1:0: Attached scsi generic sg1 type 0
+sd 0:1:0:0: Attached scsi generic sg2 type 0
+floppy0: no floppy controllers found
+work still pending
+lp: driver loaded but no devices found
+ACPI: Power Button (FF) [PWRF]
+ACPI: Mapper loaded
+dell-wmi: No known WMI GUID found
+ACPI Exception (evregion-0424): AE_SUPPORT, Returned by Handler for [DataTable] [20060707]
+ACPI Error (psparse-0537): Method parse/execution failed [\_SB_.PMI0._GHL] (Node ffff81033005b8b0), AE_SUPPORT
+ACPI Error (psparse-0537): Method parse/execution failed [\_SB_.PMI0._PMC] (Node ffff81033005b8f0), AE_SUPPORT
+ACPI Exception (power_meter-0759): AE_SUPPORT, Evaluating _PMC [20060707]
+</code></pre>
+
+<p>几经周折，工作人员执意reloadserver, 3小时后， 旧hdd用usb线插入机器。
+(这里要检查是不是usb2.0. 否则拷贝很慢。</p>
+
+<pre><code>lsmod | grep hci
+The output should look something like this:
+
+uhci_hcd               22404  0 
+ehci_hcd               34688  0 
+usbcore               134576  5 oss_usb,usbhid,uhci_hcd,ehci_hcd
+If it only shows uhci and not ehci, then the usb 2.0 drivers just aren't loading）
+</code></pre>
+
+<p>下面事识别旧hdd。 这里比较麻烦，因为hdd上做了raid， 能看到的事linux lvm.
+不知道fs type. 导致 mount  不成功。</p>
+
+<h3>详细挂载步骤：…</h3>
+
+<h4>查看设备名称。</h4>
+
+<pre><code>cd /dev/disk
+
+tree -L 2
+.
+|-- by-id
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04 -&gt; ../../sda
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04-part1 -&gt; ../../sda1
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04-part2 -&gt; ../../sda2
+|   |-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003 -&gt; ../../sdb
+|   |-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003-part1 -&gt; ../../sdb1
+|   `-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003-part2 -&gt; ../../sdb2
+|-- by-label
+|   `-- boot -&gt; ../../sdb1
+|-- by-path
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0 -&gt; ../../sdb
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0-part1 -&gt; ../../sdb1
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0-part2 -&gt; ../../sdb2
+|   |-- pci-0000:02:00.0-scsi-0:1:0:0 -&gt; ../../sda
+|   |-- pci-0000:02:00.0-scsi-0:1:0:0-part1 -&gt; ../../sda1
+|   `-- pci-0000:02:00.0-scsi-0:1:0:0-part2 -&gt; ../../sda2
+`-- by-uuid
+    |-- 6e483701-3665-4369-b304-a0b997ca810d -&gt; ../../sda1
+    `-- f38282ea-3a5b-4b90-b48b-2b8573b08d9e -&gt; ../../sdb1
+
+可以看出， sdb1, sdb2 就是usb 连接的hdd。
+</code></pre>
+
+<h4>挂载失败</h4>
+
+<pre><code>mkdir /mnt/u2
+mount /dev/sdb2 /mnt/u2 失败，尝试不同文件系统也不能成功。
+</code></pre>
+
+<p>使用 fdlisk 查看。</p>
+
+<pre><code>[root@p3100221 log]# /sbin/fdisk -l
+
+Disk /dev/sda: 250.4 GB, 250450280448 bytes
+255 heads, 63 sectors/track, 30448 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1          32      257008+  83  Linux
+/dev/sda2              33       30448   244316520   8e  Linux LVM
+
+Disk /dev/sdb: 251.0 GB, 251059544064 bytes
+255 heads, 63 sectors/track, 30522 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1   *           1          32      257008+  83  Linux
+/dev/sdb2              33       30448   244316520   8e  Linux LVM
+</code></pre>
+
+<p> 由此可以断定， /dev/sdb2y而是一个逻辑分区。 因为做了raid的原因。
+所以不可以用 mount -t
+的方式挂载，而`而应该吧逻辑分区挂到某地方,而这种分区通常名字叫 /dev/VolGroup 之类</p>
+
+<h4>识别</h4>
+
+<p>/dev里看到一个 VolGroup, 里面有2,3个文件， 是一个整体。</p>
+
+<h5>为什么有2个Linux LVM, 却只有一个 VolGroup?</h5>
+
+<p>由此想到，两个电脑上本来都有各自LVM， VolGroup重名也说不定。
+网上搜帖子进一步应证明我的想法。 网上找到一些方法改名。下面事我的做法。</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgscan 
+Reading all physical volumes.  This may take a while...
+Found volume group "VolGroup" using metadata type lvm2
+Found volume group "VolGroup" using metadata type lvm2
+</code></pre>
+
+<h4>重命名VolGroup</h4>
+
+<p>查看uuid， 根据uuid重命名.</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgs -v
+Finding all volume groups
+Finding volume group "VolGroup"
+Archiving volume group "VolGroup" metadata (seqno 3).
+Archiving volume group "VolGroup" metadata (seqno 3).
+Creating volume group backup "/etc/lvm/backup/VolGroup" (seqno 3).
+Finding volume group "VolGroup"
+Archiving volume group "VolGroup" metadata (seqno 3).
+Archiving volume group "VolGroup" metadata (seqno 3).
+Creating volume group backup "/etc/lvm/backup/VolGroup" (seqno 3).
+VG       Attr   Ext    #PV #LV #SN VSize   VFree VG UUID                               
+VolGroup wz--n- 32.00M   1   2   0 232.97G    0  DS7moo-4w7q-ehNa-hT23-8Xvo-52eu-dP11PE
+VolGroup wz--n- 32.00M   1   2   0 232.97G    0  VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp
+</code></pre>
+
+<p>将VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp 重命名为 VolGroup01</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgrename VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp VolGroup01
+Volume group "VolGroup" successfully renamed to "VolGroup01"
+</code></pre>
+
+<p>至此, 我们就可以看到2个group，但相应文件并没产生， （/dev/VolGroup01
+有， /dev/VolGroupm没有了）</p>
+
+<pre><code>重新产生文件
+/usr/sbin/lvchange VolGroup01 -a y   #means activate VolGroup01
+
+/usr/sbin/lvscan
+</code></pre>
+
+<h4>现在可以挂在了h</h4>
+
+<pre><code>mount /dev/VolGroup01/lv_root /mnt/u1
+mount /dev/VolGroup/lv_root   /mnt/u2
+</code></pre>
+
+<h4>千万主注意，</h4>
+
+<p>因为fstab里使用了这个名称，所以，用完一定要确保原本的VolGroup依然存在</p>
+
+<pre><code>umount /mnt/u1
+umount /mnt/u2
+/usr/sbin/vgrename VolGroup VolGroupold
+/usr/sbin/vgrename VolGroup01 VolGroup
+
+做这个操作因为我们的VolGroup刚好不是新hdd了。 
+</code></pre>
+
+<p>如果 umount /mnt/u2 时出现 device is busy</p>
+
+<pre><code> /sbin/fuser  -m -v /mnt/u2
+</code></pre>
+
+<p>杀死用它的进程即可。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/02/05/server-issues-fixing/">Server Issues Fixing</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-05T15:30:00+08:00" pubdate data-updated="true">Feb 5<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h4>set xid back from a old db</h4>
+
+<pre><code>update new_db.businesses, old_db.businesses 
+set new_db.businesses.xid = old_db.businesses.xid 
+where new_db.businesses.id  =  old_db.businesses.id ;
+</code></pre>
+
+<h4>bla_path(:format => :js) 会出现xxx.js, 到服务器后，就会出现404.</h4>
+
+<p>这是nginx造成的。
+解决：</p>
+
+<pre><code>location ~* ^.+\.(jpg|jpeg|js|gif|css)$ {
+    root /var/www/rails/blanee/development/public;
+  access_log off;
+  expires 30d;
+}
+
+讲js拿出来, 否则每次.js就跑到public/javascripts
+
+
+location ~ ^/(javascripts)/ { # rails3 用 assets
+    root /var/www/rails/blanee/development/public;
+  access_log off;
+  expires 30d;
+}
+
+location ~* ^.+\.(jpg|jpeg|gif|css)$ {
+    root /var/www/rails/blanee/development/public;
+  access_log off;
+  expires 30d;
+}
+</code></pre>
+
+<h4>Loading&#8230; 会爆 index not matched 错，</h4>
+
+<p>Loading&#8230; 会爆 index not matched 错，</p>
+
+<p>所以， i18n翻译文件里， 不要用连续的点.来作为键的一部分。</p>
+
+<pre><code>Error message:
+
+string not matched
+
+Exception class:
+
+IndexError
+</code></pre>
+
+<h4>create temp  table</h4>
+
+<pre><code>CREATE TABLE table2 AS (SELECT * FROM table1)
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/19/ruby-1-dot-9-3-env/">Ruby 1.9.3 Env</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-19T15:32:00+08:00" pubdate data-updated="true">Jan 19<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h3>downgrade rvm</h3>
+
+<pre><code>rvm get 1.10.1  
+这很重要， 否则就会出现以下#1问题。
+</code></pre>
+
+<ol>
+<li>install rvm .</li>
+</ol>
+
+
+<pre><code>rvm list known
+rvm install ruby-1.9.3 
+rvm list
+</code></pre>
+
+<p>结果有问题:</p>
+
+<pre><code>rvm rubies
+
+ * ree-1.8.7-2011.03 [ x86_64 ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.2-p290/config: 没有那个文件或目录
+ruby-1.9.2-p290 [  ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.3-p374/config: 没有那个文件或目录
+ruby-1.9.3-p374 [  ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.3-rc1/config: 没有那个文件或目录
+ruby-1.9.3-rc1 [  ]
+</code></pre>
+
+<p>解决：</p>
+
+<pre><code>rvm get stable
+rvm reinstall ruby-1.9.3-rc1
+</code></pre>
+
+<p>又有问题:</p>
+
+<pre><code>/usr/bin/env: bash: No such file or directory
+</code></pre>
+
+<p>解决：</p>
+
+<pre><code>rvm reload
+rvm reinstall ruby-1.9.3-rc1
+</code></pre>
+
+<p>搞定，将其他问题ruby全部重新安装。</p>
+
+<pre><code>rvm reinstall ruby-1.9.2-p290  
+rvm reinstall ruby-1.9.3-374
+</code></pre>
+
+<h3>install elasticsearch</h3>
+
+<pre><code>wget http://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.20.2.tar.gz
+tar -xzvf elasticsearch-0.20.2.tar.gz 
+mv elasticsearch-0.20.2 elasticsearch
+mv elasticsearch /usr/local/share/
+curl -L http://github.com/elasticsearch/elasticsearch-servicewrapper/tarball/master | tar -xz
+mv *servicewrapper*/service /usr/local/share/elasticsearch/bin/
+rm -Rf *servicewrapper*
+/usr/local/share/elasticsearch/bin/service/elasticsearch install
+/etc/init.d/elasticsearch start
+</code></pre>
+
+<h3>配置nginx</h3>
+
+<p>更改 passenger_ruby和passenger_root后， 启动出现如下问题。</p>
+
+<pre><code># /sbin/service nginx restart
+
+停止 nginx：                                               [确定]
+启动 nginx：nginx: [alert] Unable to start the Phusion Passenger watchdog because its executable (/usr/local/rvm/gems/ruby-1.9.3-p362/gems/passenger-3.0.19/agents/PassengerWatchdog) does not exist. This probably means that your Phusion Passenger installation is broken or incomplete, or that your 'passenger_root' directive is set to the wrong value. Please reinstall Phusion Passenger or fix your 'passenger_root' directive, whichever is applicable. (-1: Unknown error)
+                                                           [确定]
+</code></pre>
+
+<p>解决：</p>
+
+<pre><code>passenger-config --root 
+rake nginx
+</code></pre>
+
+<h4>还有问题：cannot load such file &#8211; bundler</h4>
+
+<p>Error:</p>
+
+<pre><code>Error message:
+cannot load such file -- bundler
+</code></pre>
+
+<p>Solution:</p>
+
+<pre><code>#passenger_root /usr/local/rvm/gems/ree-1.8.7-2011.03/gems/passenger-2.2.15;
+#passenger_root /usr/local/rvm/gems/ree-1.8.7-2011.03/gems/passenger-3.0.5;
+
+passenger_root /usr/local/rvm/gems/ruby-1.9.3-p362/gems/passenger-3.0.19;
+
+#passenger_ruby /usr/local/rvm/rubies/ree-1.8.7-2011.03/bin/ruby;
+#passenger_ruby /usr/local/rvm/rubies/ruby-1.9.3-p362/bin/ruby;
+passenger_ruby /usr/local/rvm/wrappers/ruby-1.9.3-p362/ruby;
+</code></pre>
+
+<p>yg b</p>
+
+<pre><code>rails_spawn_method conservative;
+passenger_user_switching on;
+passenger_default_user nginx;
+passenger_default_group nginx;
+passenger_max_pool_size 45;
+</code></pre>
+
+<p>关键事这两句：</p>
+
+<pre><code>#passenger_ruby /usr/local/rvm/rubies/ruby-1.9.3-p362/bin/ruby;
+passenger_ruby /usr/local/rvm/wrappers/ruby-1.9.3-p362/ruby;
+</code></pre>
+
+<p>使用wrappers里的ruby</p>
+
+<h3>install node.js + juggernaut ###</h3>
+
+<p>I tried python3.3 with node 0.8.18,  0.8.* , doesn&#8217;t works.</p>
+
+<pre><code>git clone https://github.com/joyent/node.git
+git branch --track v0.6 origin/v0.6
+git checkout v0.6
+./configure
+make
+make install
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -618,1125 +1081,6 @@ date.timezone = &#8220;Europe/Berlin&#8221;
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/01/13/about-mail-server/">About Mail Server</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-01-13T01:42:00+08:00" pubdate data-updated="true">Jan 13<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>掌握邮件发送技术刻不容缓， 写此篇博客以作备忘。</p>
-
-<h3>postfix 系统安装</h3>
-
-<h4>install mc</h4>
-
-<pre><code>yum install mc
-cd /usr/share/mc
-</code></pre>
-
-<h4>How should it be</h4>
-
-<pre><code>[root@mail.blanee.net /etc/postfix]# ps aux | grep "postfix"
-postfix    744  0.0  0.0  66932  2976 ?        S    12:18   0:00 smtp -t unix -u
-postfix   2889  0.0  0.0  67136  3384 ?        D    11:56   0:00 cleanup -z -t unix -u
-root      4550  0.0  0.0  66636  2100 ?        Ss    2012   2:13 /usr/libexec/postfix/master
-postfix   4563  0.0  0.0  66976  2432 ?        S     2012   4:16 qmgr -l -t fifo -u
-postfix   5309  0.0  0.0  66860  3048 ?        S    12:09   0:00 trivial-rewrite -n rewrite -t unix -u
-postfix   6277  0.0  0.0  66764  2804 ?        S    11:40   0:00 bounce -z -t unix -u
-postfix   6361  0.0  0.0  66932  2936 ?        S    12:02   0:00 smtp -n relay -t unix -u -o smtp_fallback_relay=
-postfix   7419  0.0  0.0  66724  2756 ?        S    11:59   0:00 pickup -l -t fifo -u
-root      7675  0.0  0.0  61188   784 pts/2    S+   12:19   0:00 grep postfix
-postfix   7873  0.0  0.0  66764  2800 ?        S    11:39   0:00 bounce -z -t unix -u
-postfix  11515  0.0  0.0  67136  3388 ?        S    12:11   0:00 cleanup -z -t unix -u
-postfix  17586  0.0  0.0  66772  2800 ?        S    11:14   0:00 pipe -n bproc -t unix flags=Rq user=bproc argv=/opt/bounceproc/process.pl -f ${sender} -- ${recipient}
-postfix  18082  0.0  0.0  67664  2804 ?        S    12:06   0:00 pipe -n bproc -t unix flags=Rq user=bproc argv=/opt/bounceproc/process.pl -f ${sender} -- ${recipient}
-postfix  26125  0.0  0.0  67300  3516 ?        S    12:09   0:00 smtpd -n smtp -t inet -u -o stress= -s 2
-</code></pre>
-
-<h4>ready</h4>
-
-<p>centos5</p>
-
-<pre><code>rpm -ihv http://dl.fedoraproject.org/pub/epel/5/x86_64/epel-release-5-4.noarch.rpm # or higher
-rpm -ihv http://centos.alt.ru/repository/centos/5/x86_64/centalt-release-5-3.noarch.rpm
-</code></pre>
-
-<p>centos6</p>
-
-<pre><code>rpm -ihv http://centos.alt.ru/repository/centos/6/x86_64/centalt-release-6-1.noarch.rpm
-
-
-
-yum update
-yum install postfix
-
-
-netstat   -tlnp
-rpm -e sendmail
-yum remove sendmail
-
-tail -f /var/log/maillog
-</code></pre>
-
-<h3>integrate opendkim</h3>
-
-<h4>opendkim</h4>
-
-<p>Go to http://www.opendkim.org/ and hit the Download link to download the software. Save it to <code>/usr/local/src</code> on your server. For this HowTo, I used OpenDKIM version 2.4.2, which was released on August 6, 2011.</p>
-
-<p>You’ll also need to install the <code>OpenSSL</code> and <code>Sendmail development</code> packages, because they contain some secret herbs and spices (otherwise known as “libraries”) you need to get OpenDKIM working. Do:</p>
-
-<pre><code>yum install sendmail-devel openssl-devel
-</code></pre>
-
-<p>Extract, configure, compile, and install OpenDKIM with:</p>
-
-<pre><code>tar zxvf opendkim-2.4.2.tar.gz
-cd opendkim-2.4.2
-./configure --sysconfdir=/etc --prefix=/usr/local --localstatedir=/var
-make
-make install
-</code></pre>
-
-<p>Note that the <code>./configure</code> command includes a few very important flags, which will be passed into the startup script that’s created when the configure command runs. The first tells the system where OpenDKIM’s conf file will be located, the second sets the preferred prefix for some other important file locations, and the final one controls the directory where the PID file for OpenDKIM will be stored. If none of this makes any sense to you, that’s ok – just be sure to use those flags when you run configure, since they are the settings used throughout this tutorial.</p>
-
-<p>Also, it’s important to note that the make install command must be performed as root (or using sudo), since it needs to install files files in the <code>/usr/local/bin</code> directory.</p>
-
-<h4>Create a new user and home directory</h4>
-
-<p>Add a new user for DKIM called <code>opendkim</code> with the following options:</p>
-
-<pre><code>useradd -r -g opendkim -G mail -s /sbin/nologin -d /var/run/opendkim -c "OpenDKIM" opendkim
-</code></pre>
-
-<p>This command will:</p>
-
-<ul>
-<li>create a new system account (-r) and group (-g) called opendkim,</li>
-<li>create a home directory (-d) for the new user in /var/run/opendkim,</li>
-<li>also add the opendkim to the mail group (-G),</li>
-<li>assign no shell access to this user (-s), and</li>
-<li>set the account comment to “OpenDKIM (-c).</li>
-<li><p>While the proper permissions for this account’s home directory should be set when the user is created, to avoid any permissions issues in further steps, it doesn’t hurt to manually set them with:</p>
-
-<p>chown opendkim:opendkim /var/run/opendkim</p></li>
-</ul>
-
-
-<p>then:</p>
-
-<pre><code>chmod 700 /var/run/opendkim
-</code></pre>
-
-<h4>Create working directories</h4>
-
-<p>Make some new directories for OpenDKIM and give them the proper ownership and permissions with:</p>
-
-<pre><code>mkdir -p /etc/opendkim/keys
-chown -R opendkim:opendkim /etc/opendkim
-chmod -R go-wrx /etc/opendkim/keys
-</code></pre>
-
-<h4>Copy the startup script to /etc/init.d/</h4>
-
-<p>Starting with version 2.3.0, OpenDKIM’s source package includes a contrib directory that contains a custom init script (written by yours truly) for use with all RedHat-compatible systems, including Fedora and CentOS. You can copy it to your /etc/init.d/ directory to make starting, stopping, restarting, and reloading OpenDKIM easy. Just do:</p>
-
-<pre><code>cp /usr/local/src/opendkim-2.4.2/contrib/init/redhat/opendkim /etc/init.d/
-</code></pre>
-
-<p>Now set the correct permissions for the init script with:</p>
-
-<pre><code>chmod 755 /etc/init.d/opendkim
-</code></pre>
-
-<h4>Generate keys for signing</h4>
-
-<p>Now you’re getting to the good part. You need to generate a <code>private</code> and a <code>public</code> key for each of the domains for which you wish to sign mail. The private key is stored away from prying eyes on your server, while the public key gets published in your domain’s DNS records so that receiving mail servers can verify your DKIM-signed mail. If you’re hard-core, you can build the keys manually. Or, you can use the fancy script included with <code>OpenDKIM</code> to do it for you. I’ve manually generated enough keys in my life and have nothing to prove, so I use the script.</p>
-
-<p>Before running this script, decide now what the name of your selector is going to be. A selector is a unique keyword that is associated with both keys (public and private), included in all the signatures, and published in your DNS records. For simplicity, I use the word default as my default selector. Not very creative, but it’s effective. Feel free to choose something different, but if you do, you’ll need to use it consistently throughout your setup. Also, while this should go without saying, you should use your mail domain instead of example.com throughout the following steps.</p>
-
-<p>Create your keys with:</p>
-
-<pre><code>mkdir /etc/opendkim/keys/tiaoboo.com
-/usr/sbin/opendkim-genkey -D /etc/opendkim/keys/tiaoboo.com/ -d tiaoboo.com -s default
-chown -R opendkim:opendkim /etc/opendkim/keys/tiaoboo.com
-mv /etc/opendkim/keys/tiaoboo.com/default.private /etc/opendkim/keys/tiaoboo.com/default
-</code></pre>
-
-<p>You can do a man <code>opendkim-genkey</code> if you’re interested in what additional options are available when creating your keys. In this example, I used the <code>-D</code> (directory) option, the <code>-d</code> (domain) option, and the <code>-s</code> (selector) options. That’s all you need to get this going.</p>
-
-<h4>Edit configuration files</h4>
-
-<p>You’re getting really close now. You need to create or edit four files:</p>
-
-<ul>
-<li><code>/etc/opendkim.conf</code> – OpenDKIM’s main configuration file</li>
-<li><code>/etc/opendkim/KeyTable</code> – a list of keys available for signing</li>
-<li><code>/etc/opendkim/SigningTable</code> - a list of domains and accounts allowed to sign</li>
-<li><code>/etc/opendkim/TrustedHosts</code> – a list of servers to “trust” when signing or verifying</li>
-</ul>
-
-
-<p>Use your favorite text editor to create an <code>/etc/opendkim.conf</code> file that looks like this:</p>
-
-<pre><code>##
-## opendkim.conf -- configuration file for OpenDKIM filter
-##
-
-AutoRestart             Yes
-AutoRestartRate         10/1h
-Canonicalization        relaxed/simple
-ExternalIgnoreList      refile:/etc/opendkim/TrustedHosts
-InternalHosts           refile:/etc/opendkim/TrustedHosts
-KeyTable                refile:/etc/opendkim/KeyTable
-LogWhy                  Yes
-Mode                    sv
-PidFile                 /var/run/opendkim/opendkim.pid
-SignatureAlgorithm      rsa-sha256
-SigningTable            refile:/etc/opendkim/SigningTable
-Socket                  inet:8891@localhost
-Syslog                  Yes
-SyslogSuccess           Yes
-TemporaryDirectory      /var/tmp
-UMask                   022
-UserID                  opendkim:opendkim
-</code></pre>
-
-<p>You can do man <code>opendkim.conf</code> for more information on each of the options.</p>
-
-<p>Next, you’ll need to create the three text files that you just mentioned in your config file. First, using your favorite text editor, create an <code>/etc/opendkim/KeyTable</code> file that looks like this:</p>
-
-<pre><code>default._domainkey.tiaoboo.com tiaoboo.com:default:/etc/opendkim/keys/tiaoboo.com/default
-</code></pre>
-
-<p>The <code>KeyTable</code> file tells <code>OpenDKIM</code> where to find your keys. Each entry in the  <code>KeyTable</code> file is a single line for each key location</p>
-
-<pre><code>(for example, all of the text in the above example should be on a single line in your file). If you’re going to use multiple keys (to sign mail for virtual domains with different keys, for example), you’ll need to create a separate line in the KeyTable file for each domain.
-</code></pre>
-
-<p>Next, create an <code>/etc/opendkim/SigningTable</code> file that looks like this:</p>
-
-<pre><code>*@tiaoboo.com default._domainkey.tiaoboo.com
-</code></pre>
-
-<p>The <code>SigningTable</code> file tells <code>OpenDKIM</code> how to use your keys, as in which senders should use which selectors for their signatures. In the above example, I’m saying that everyone (*) sending mail from the server “tiaoboo.com” should use the selector named “default.” It’s important to note that the <code>*</code> wildcard symbol will only work if the SigningTable option uses the refile: prefix before the filename (see the <code>opendkim.conf</code> documentation for more details).</p>
-
-<p>Now create an <code>/etc/opendkim/TrustedHosts</code> file that looks like this:</p>
-
-<pre><code>127.0.0.1/8
-tiaoboo.com
-</code></pre>
-
-<p>The TrustedHosts file tells <code>OpenDKIM</code> who to let use your keys. Because it’s referenced by the ExternalIgnoreList directive in your conf file, OpenDKIM will ignore this list of hosts when verifying incoming mail. And, because it’s also referenced by the InternalHosts directive, this same list of hosts will be considered “internal,” and OpenDKIM will sign their outgoing mail.</p>
-
-<p><code>IMPORTANT:</code> Make sure you list the IP address for localhost (<code>127.0.0.1</code>) in the TrustedHosts file or OpenDKIM won’t sign mail sent from this server. If you have multiple servers on the same network that relay mail through this server and you want to sign their mail as well, they must be listed in the TrustedHosts file. Put each entry on its own line. An entry can be a hostname, domain name (e.g. “toaoboo.com”), IP address, an IPv6 address (including an IPv4 mapped address), or a CIDR-style IP specification (e.g. “192.168.1.0/24″).</p>
-
-<p>It should also go without saying (but I’ll say it anyway) that if you’re planning to sign outgoing mail for remote hosts, your Postfix should have been previously configured to allow relaying for those hosts, as “explained” here… although, when referring to Postfix’s programmer-centric documentation, I generally use the term “explain” very loosely.</p>
-
-<h4>Edit your Postfix configuration</h4>
-
-<p>Now you’re ready to add the following lines to your <code>Postfix main.cf</code> file, which will make Postfix aware of <code>OpenDKIM</code> and allow it to sign and verify mail:</p>
-
-<pre><code>smtpd_milters           = inet:127.0.0.1:8891
-non_smtpd_milters       = $smtpd_milters
-milter_default_action   = accept
-</code></pre>
-
-<p>If you’re running a <code>version of Postfix prior to 2.6</code>, you may also need to add:</p>
-
-<pre><code>milter_protocol   = 2
-</code></pre>
-
-<p>See http://www.postfix.org/MILTER_README.html#version for more info.</p>
-
-<h4>Start OpenDKIM and restart Postfix</h4>
-
-<p>It’s time to fire things up! Assuming you’re using bash, do:</p>
-
-<pre><code>hash -r
-</code></pre>
-
-<p>to rehash your shell so you can find the init script.</p>
-
-<p>Now start OpenDKIM with:</p>
-
-<pre><code>service opendkim start
-</code></pre>
-
-<p>You should get a message that says:</p>
-
-<pre><code>Starting OpenDKIM Milter:     [  OK  ]
-</code></pre>
-
-<p>However, if you get an error message such as:</p>
-
-<pre><code>Starting OpenDKIM Milter: opendkim: /etc/opendkim.conf: configuration error at line 6: unrecognized parameter
-</code></pre>
-
-<p>don’t freak out. You probably just mistyped something in one of the config files. Go to the line number of the file listed, and check your work against the example(s) in this HowTo. Then try starting up OpenDKIM again.</p>
-
-<p>Once it starts, refresh Postfix with:</p>
-
-<pre><code>postfix reload
-</code></pre>
-
-<p>If everything looks good, I recommend running <code>chkconfig on OpenDKIM</code> to make sure it starts when you boot your server:</p>
-
-<pre><code>chkconfig --level 2345 opendkim on
-</code></pre>
-
-<p>If things didn’t go right, try some of these startup troubleshooting tips before moving on.</p>
-
-<h4>Startup troubleshooting tips</h4>
-
-<ul>
-<li><p>Tip 1: The best advice I can give when troubleshooting any mail issues (including OpenDKIM) is to start a second shell session in another window and do:</p>
-
-<p>tail -f /var/log/maillog</p></li>
-</ul>
-
-
-<p>while you’re starting, stopping, and/or restarting OpenDKIM and Postfix. This allows you to see more details about any errors in your configuration.</p>
-
-<ul>
-<li>Tip 2: To get the most verbose information from OpenDKIM, make sure the LogWhy option in your /etc/opendkim.conf file is uncommented and set to Yes. If your outgoing mail isn’t getting signed and you want to know why, this should tell you.</li>
-</ul>
-
-
-<h4>The Most Important Step: Adding DNS Records</h4>
-
-<p>Now that your mail server is signing outgoing mail and verifying incoming mail, you’ll need to put some information in your DNS records to tell other mail servers how your keys are set up, and provide the public key for them to check that your mail is properly signed. Do:</p>
-
-<pre><code>cat /etc/opendkim/keys/tiaoboo.com/default.txt
-</code></pre>
-
-<p>The output should look something like this:</p>
-
-<pre><code>default._domainkey IN TXT "v=DKIM1; g=*; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDHY7Zl+n3SUldTYRUEU1BErHkKN0Ya52gazp1R7FA7vN5RddPxW/sO9JVRLiWg6iAE4hxBp42YKfxOwEnxPADbBuiELKZ2ddxo2aDFAb9U/lp47k45u5i2T1AlEBeurUbdKh7Nypq4lLMXC2FHhezK33BuYR+3L7jxVj7FATylhwIDAQAB" ; ----- DKIM default for tiaoboo.com
-</code></pre>
-
-<p>If you manage your own DNS or have full access to your domain’s zone file, you’ll need to paste the entire contents of the default.txt file at the bottom of your domain’s zone file. If you’re using a web interface to manage your zone file, be careful that the long lines of the public key don’t wrap and create line-feed characters (or fix them if they do). Otherwise, your public key won’t work.</p>
-
-<p>If you’re using GoDaddy’s Total DNS, the TXT Name would  default._domainkey and the TXT Value would be everything inside the quotes (starting with v=). You can ignore the semi-colon and comments at the end.</p>
-
-<p>If you’re using some other third-party DNS provider, follow their instructions for adding a new TXT Record.</p>
-
-<p>You should also add another TXT Record to your zone file that reads:</p>
-
-<pre><code>_adsp._domainkey.tiaoboo.com    IN    TXT    "dkim=unknown" 3600
-_domainkey.tiaoboo.com          IN    TXT    "o=~;*         3600
-_spf.tiaoboo.com                IN    TXT    "ip4:66.135.35.84"  600
-default._domainkey.tiaoboo.com  IN    TXT    "v=DKIM1; k=rsa;
-</code></pre>
-
-<p>p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFkbFiloMnbWBkt/Q9dVTLAqcr536yJj7jmdyZVoMNJXHZrio78OFnGxCGjbJm3iPZ07YXhjhP0YIYi4SdpQD5w8JIB7vrArWLwwJnyL3IsiYrhoiaMFWJRpjnhSf16l/IcoO3+s8HRJOzQrw5HJsNM9KbnOxodYTew+lC4OqZgQIDAQAB&#8221;  1800</p>
-
-<p>This record publishes your Author Domain Signing Practices. “Unknown” is <code>the least strict setting</code>, and the best place to start. You can learn more and tinker with other options later, but most people just use “Unknown” for now, since ADSP is relatively new (as of the writing of this post).</p>
-
-<p>And, as long as you’re messing with your domain’s zone file, now might be a good time to ensure that you already have a valid SPF Record in place. Having both DKIM and SPF in place will increase your chances of having your outgoing mail successfully delivered.</p>
-
-<h4>Testing Things Out</h4>
-
-<p>As I mentioned in my troubleshooting tips, the best way to see that everything is working on the server side is to keep an eye on your <code>/var/log/maillog</code> file. Do a:</p>
-
-<pre><code>tail -f /var/log/maillog
-</code></pre>
-
-<p>When OpenDKIM starts (or restarts), you should see lines like:</p>
-
-<pre><code>opendkim[4397]: OpenDKIM Filter: mi_stop=1
-opendkim[4397]: OpenDKIM Filter v2.4.2 terminating with status 0, errno = 0
-opendkim[27444]: OpenDKIM Filter v2.4.2 starting (args: -x /etc/opendkim.conf)
-</code></pre>
-
-<p>When you send a mail that gets successfully signed, you should see:</p>
-
-<pre><code>opendkim[22254]: 53D0314803B: DKIM-Signature header added
-</code></pre>
-
-<h4>Further reading</h4>
-
-<p>I have to admit that there wasn’t a whole lot of publicly available information on getting <code>OpenDKIM</code> working with Postfix. Hopefully, this HowTo will make it easier for you than it was for me.</p>
-
-<ul>
-<li>DKIM.org – the official site for DomainKeys Identified Mail</li>
-<li>OpenDKIM Project Site – the program I used to get DKIM working</li>
-<li>Sendmail DKIM – a detailed article from Eland Systems about DKIM. They use the dkim-milter package, upon which OpenDKIM is based. I much prefer the newer OpenDKIM, but this article explains DKIM very well and has some good tips.</li>
-<li>Mail-DKIM and DKIM-proxy – my first experiments with DKIM were with these tools. I never got it working quite right, but there’s lots of good info there.</li>
-<li>OpenSPF.org – not technically related to DKIM, but it’s another spam-fighting technique that you should be using if you’re sending email</li>
-</ul>
-
-
-<p>Good luck! Pease post in the comments with your successes, questions, or suggestions.</p>
-
-<h3>Upgrading OpenDKIM</h3>
-
-<p>If you’ve followed this guide to compile and install <code>OpenDKIM</code>, and would like to upgrade to a newer version, simply download the updated version (using the download link above), then repeat these steps:</p>
-
-<pre><code>tar zxvf opendkim-2.4.2.tar.gz
-cd opendkim-2.4.2
-./configure --sysconfdir=/etc --prefix=/usr/local --localstatedir=/var
-make
-make install
-</code></pre>
-
-<p>This will upgrade your OpenDKIM and keep your existing configuration intact. Remember to restart OpenDKIM after your upgrade with:</p>
-
-<pre><code>service opendkim restart
-</code></pre>
-
-<p>Do:</p>
-
-<pre><code>tail -f /var/log/maillog
-</code></pre>
-
-<p>to verify that the newer version started up with no problems.</p>
-
-<h3>Notice</h3>
-
-<ul>
-<li><p>dk-milt 这个进程，启动2个的话，服务器就会瘫痪。 切记</p>
-
-<p>dk-milt  10630     1  0 00:44 ?        00:00:00 /usr/sbin/dk-filter -u dk-milt -p inet:10034@127.0.0.1 -d /etc/mail/domainkeys/domains -s /etc/mail/domainkeys/keys -S mail -b sv -c simple -C bad=r,dns=t,int=t,no=a,miss=r -A -k -l -P /var/run/dk-filter0.pid
-nginx    18084 17997  0 00:52 pts/3    00:00:00 grep dk
-opendkim 29307     1  0 00:45 ?        00:00:00 /usr/sbin/opendkim -x /etc/opendkim.conf -P /var/run/opendkim/opendkim.pid
-opendkim 29309 29307  0 00:45 ?        00:00:00 /usr/sbin/opendkim -x /etc/opendkim.conf -P /var/run/opendkim/opendkim.pid</p></li>
-<li><p><code>dkim-filter</code> 是<code>opendkim</code> 的前身，所以， 不需要同时装<code>dkim-filter</code> 和
-<code>opendkim</code></p>
-
-<p>DomainKeysis 一种过时的技术（更好的探测技术术语，是一个“历史性协议”）。虽然有些邮件程序可能仍然用DomainKeys签上自己的邮件，该技术已被遗弃，不再被开发。基本上，你不再需要它了。
-DKIM(which stands forDomainKeys Internet Mail) 是新标准，  推荐的方法。</p></li>
-</ul>
-
-
-<p>DomainKeys 已经过期， 如果你真想使用它， the only way you should even consider doing do is to first set up DKIM using OpenDKIM (by following the steps in my earlier tutorial), and then set up DomainKeys by re-using and relying on as much of of your DKIM installation as possible.</p>
-
-<p>OpenDKIM 是一个开源C语言库，
-由社区努力开发和维护的用来生产 DKIM-aware 应用程序，提供DKIM服务的开源C语言库。</p>
-
-<p>OpenDKIM 是基于开源项目 dkim-milter v2.8.3(最近一次更新为2009-06-03) 的代码基础上开发的， 由 Sendmail, Inc. 开发和维护
-OpenDKIM版本是最新的，有人维护的。比之于老掉牙的DomainKeys，很长时间没有更新的 DKIM-Milter 更有活力，似乎也更容易安装和维护</p>
-
-<h3>DK</h3>
-
-<p>在openDKIM 安装后， 就可以着手安装domainKeys了。</p>
-
-<pre><code>rpm -ivh dk-milter-1.0.2-1.x86_64.rpm 
-</code></pre>
-
-<h4>Modify the default dk-milter configuration</h4>
-
-<p>The RPM you installed copied the necessary binaries and default configuration files for dk-milter. However, we won’t be using the default settings. Because you already chose a selector, created keys, and set up your DNS records when you set up OpenDKIM, we can re-use the same selector, keys, and DNS records in dk-milter with a few simple modifications.</p>
-
-<h4>Remember your selector</h4>
-
-<p>When you configured OpenDKIM, you already decided the name of your selector. Your selector is a unique keyword that is associated with both keys (public and private), included in all the signatures, and is published in your DNS records. For simplicity, I chose the word <code>default</code> as my default selector in the OpenDKIM tutorial, and will do the same here. If you chose something different, remember to use it consistently in this tutorial, too. It just needs to be the same as the one you used with OpenDKIM.</p>
-
-<p>Also, while this should go without saying, you should also use your mail domain instead of <code>tiaoboo.com</code> throughout the following steps.</p>
-
-<h4>Edit the dk-milter configuration file</h4>
-
-<p>Use your favorite text editor to open the default dk-milter configuration file, which is located at <code>/etc/sysconfig/dk-milter</code>. By default, all the values in that file are commented out, meaning that unless you change them now, dk-milter will use the settings from its init script when it starts up.</p>
-
-<p>Uncomment and edit the necessary lines in the file so that it appears as follows:</p>
-
-<pre><code># Default values
-#
-USER="opendkim"
-PORT="inet:10035@localhost"
-SIGNING_DOMAIN="tiaoboo.com"
-SELECTOR_NAME="default"
-KEYFILE="/etc/opendkim/keys/${SIGNING_DOMAIN}/${SELECTOR_NAME}"
-SIGNER=yes
-VERIFIER=no
-CANON=simple
-REJECTION="bad=r,dns=t,int=t,no=a,miss=r"
-EXTRA_ARGS="-h -l -D -i /etc/opendkim/TrustedHosts"
-SYSCONFIG="/etc/sysconfig/dk-milter"
-MILTER_GROUP="opendkim"
-
-# User configuration
-#
-#PORT0="inet:10034@localhost"
-#SIGNER0=no
-#PORT1="inet:10035@localhost"
-#VERIFIER1=no
-#...
-</code></pre>
-
-<p>Notice that we’re referencing the opendkim user and group on lines 3 and 14 of this file, because the directory and private key you previously set up for DKIM is owned (and can only be read by) the opendkim user and group.</p>
-
-<p>Also notice on line 12 that we’re re-using the <code>/etc/opendkim/TrustedHosts</code> file you set up for OpenDKIM. This is comparable to the InternalHosts directive in your OpenDKIM configuration file. You’re telling dk-milter that these domains are internal (with the -i flag), so it’s OK to sign their outgoing mail.</p>
-
-<p>Finally, notice that I left the User configuration settings on lines 16-22 commented out. You can delete them if you want, since we won’t need them for this implementation.</p>
-
-<h4>Edit your Postfix configuration</h4>
-
-<p>Since you already added lines to your Postfix main.cf file to tell Postfix how to interact with OpenDKIM, you can just add the milter information for dk-milter to the end of those same lines. Find the lines in your Postfix main.cf that look like this:</p>
-
-<pre><code>smtpd_milters = inet:localhost:8891
-non_smtpd_milters = inet:localhost:8891
-</code></pre>
-
-<p>and edit them to look like this:</p>
-
-<pre><code>smtpd_milters = inet:localhost:10035, inet:localhost:8891
-non_smtpd_milters = inet:localhost:10035, inet:localhost:8891
-</code></pre>
-
-<p><code>Notice that I put the milter info for dk-milter first and for OpenDKIM last</code>. This actually determines the order of each milter’s headers in your outgoing mail (the first shall be last and the last shall be first). I recommend using this order, which places the DKIM signature above the DomainKeys signature in your outgoing email. That way, the receiving mailer will parse the DKIM information (the newer protocol) first.</p>
-
-<h4>Start dk-milter and restart Postfix</h4>
-
-<p>You’re ready to fire things up. Start dk-milter with:</p>
-
-<pre><code># /sbin/service dk-milter start
-</code></pre>
-
-<p>You should get a message that says:</p>
-
-<pre><code>Starting DomainKeys milter (dk-filter #0):     [  OK  ]
-</code></pre>
-
-<p>If you get an error message, don’t freak out. You probably just mistyped something in one of the config files. Go to the line number of the file listed, and check your work against the example(s) in this tutorial. Then try starting up dk-milter again.</p>
-
-<p>Once dk-milter starts successfully, restart Postfix with:</p>
-
-<pre><code># /sbin/service postfix restart
-</code></pre>
-
-<p>If everything looks good, you may want to consider running chkconfig on dk-milter to make sure it starts when you reboot:</p>
-
-<pre><code># /sbin/chkconfig --level 2345 dk-milter on
-</code></pre>
-
-<h4>Modifying DNS records</h4>
-
-<p>While DomainKeys (via <code>dk-milter</code>)(yahoo) will rely on the same DNS information as <code>DKIM (via OpenDKIM)</code> for selector information, there is one minor addition and one minor change you need to make to your domain’s DNS records to support the older DomainKeys protocol.</p>
-
-<p>First, you need to add a TXT Record to your zone file that reads:</p>
-
-<pre><code>_domainkey.tiaoboo.com IN TXT "t=y; o=~"
-</code></pre>
-
-<p>The <em>domainkey TXT record is slightly comparable to the </em>adsp TXT record you added when setting up DKIM. It basically publishes your DomainKeys policies. The t=y means the domain is in test mode, so only use this setting while you’re testing things out. Once you’ve verified it works, remember to change it to t=n. The o=~ means that some emails from this domain will be signed, but not all. A setting of o=- means that every email from this domain will be signed, and that a messages origin should be in doubt if it comes from this domain unsigned. For now, the safest setting is o=~.</p>
-
-<p>Second, you need to edit the TXT file for your selector and remove the v=DKIM1; and g=*; arguments, as these sometimes cause issues for a few mail servers when they attempt to validate the older DomainKeys.</p>
-
-<h4>Testing Things Out</h4>
-
-<p>As always, the best way to see that everything is working on the server side is to keep an eye on your <code>/var/log/maillog</code> file. Do a:</p>
-
-<pre><code># tail -f /var/log/maillog
-</code></pre>
-
-<p>When dk-milter starts (or restarts), you should see lines like:</p>
-
-<pre><code>dk-filter[19535]: Sendmail DomainKeys Filter v1.0.2 starting (args: -u opendkim-milt -p inet:10035@localhost -d /etc/mail/dkim/trusted-hosts -s /etc/mail/domainkeys/keylist -S default -b sv -c simple -C bad=r,dns=t,int=t,no=a,miss=r -h -l -D -k -i /etc/mail/dkim/trusted-hosts -P /var/run/dk-filter0.pid)
-</code></pre>
-
-<p>Unlike OpenDKIM, dk-milter doesn’t log anything when you send a mail that gets successfully signed, so the best way to check that your signed mail is being authenticated and that your DNS records are properly set up is to use one of the free testing services. My favorites are:</p>
-
-<ul>
-<li>Brandon Checketts Email Validator</li>
-<li>Send a signed email to: autorespond+dkim@dk.elandsys.com</li>
-<li>Send a signed email to: sa-test@sendmail.net</li>
-<li>Send a signed email to: check-auth@verifier.port25.com</li>
-</ul>
-
-
-<p>(you can put all of the test email addresses in the To: field of a single outgoing message to test)
-Each of these will tell you if things are working properly, and give you some pointers on troubleshooting if needed. If  Brandon Checketts’ Email Validator gives an error message in the DomainKeys field that reads:</p>
-
-<pre><code>Unable to verify signature
-  granularity does not match address
-</code></pre>
-
-<p>That probably means the g=*; setting from your selector’s DNS TXT record is either still in your record or that the record is being cached by Brandon’s server. Wait an hour and then try again.</p>
-
-<p>If you have a Gmail account, you can also send a signed message there for a quick and easy test. I like to click the Show Original link (under the Reply drop-down on the right) to see the signed headers. You should see headers for DKIM as well as DomainKeys.</p>
-
-<p>The one result that everyone seems to want is this reply from the verifier.port.25.com test:</p>
-
-<pre><code>==========================================================
-Summary of Results
-==========================================================
-SPF check:          pass
-DomainKeys check:   pass
-DKIM check:         pass
-Sender-ID check:    pass
-SpamAssassin check: ham
-</code></pre>
-
-<p>If you get that result, then congratulations – you’re signing mail with DKIM and DomainKeys. Sure, it’s a little redundant, but apparently overkill is just your style.</p>
-
-<h3>SPF</h3>
-
-<p>当服务器接收到邮件时会检查域名的SPF记录与客户端IP是否匹配，如匹配就被认为是真实的邮件，不匹配就被认为是假冒的邮件，当然如果对方域名未做SPF记录会被误报。
-安装postfix-policyd-spf-perl用以检查域SPF记录并匹配：</p>
-
-<pre><code>yum install perl-Mail-SPF perl-Sys-Hostname-Long
-wget https://launchpad.net/postfix-policyd-spf-perl/trunk/release2.010/+download/postfix-policyd-spf-perl-2.010.tar.gz
-tar zxvf postfix-policyd-spf-perl-2.010.tar.gz 
-mv postfix-policyd-spf-perl-2.010/postfix-policyd-spf-perl /usr/sbin/
-chmod +x /usr/sbin/postfix-policyd-spf-perl
-</code></pre>
-
-<p>开启postfix-policyd-spf-perl服务：</p>
-
-<pre><code>cat /etc/postfix/master.cf
-policy-spf  unix  -       n       n       -       -       spawn
- user=nobody argv=/usr/sbin/postfix-policyd-spf-perl
-</code></pre>
-
-<p>编辑Postfix主配置文件添加SPF过滤规则：</p>
-
-<pre><code>#cat /etc/postfix/main.cf
-smtpd_recipient_restrictions =
-permit_mynetworks,
-permit_sasl_authenticated,
-reject_unauth_destination,
-#reject_unknown_client,
-check_policy_service unix:private/policy-spf
-</code></pre>
-
-<p>重新加载Postfix配置文件：</p>
-
-<p>/etc/init.d/postfix reload</p>
-
-<p>测试SPF效果：</p>
-
-<pre><code>#下为错误
-postfix/policy-spf[15857]: Policy action=PREPEND Received-SPF: softfail (onovps.com: Sender is not authorized by default
-#下为正确
-postfix/policy-spf[15726]: Policy action=PREPEND Received-SPF: pass (qq.com: Sender is authorized to use 'qq@qq.com'
-</code></pre>
-
-<p>Policy-spy默认不阻止验证失败的发件人邮件，会在邮件头部添加Received-SPF: softfail标签，如果要对其处理可使用Postfix过滤规则header_checks进行匹配操作。
-添加header_checks匹配规则：</p>
-
-<pre><code>#cat /etc/postfix/header_checks 
-</code></pre>
-
-<p>编辑主Postfix主配置文件应用此规则：</p>
-
-<pre><code>#cat main.cf
-header_checks = pcre:/etc/postfix/header_checks
-</code></pre>
-
-<h4>编辑DNS</h4>
-
-<pre><code>_spf.tiaoboo.com
-ip4:66.135.35.84
-default._domainkey.tiaoboo.com
-v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFkbFiloMnbWBkt/Q9dVTLAqcr536yJj7jmdyZVoMNJXHZrio78OFnGxCGjbJm3iPZ07YXhjhP0YIYi4SdpQD5w8JIB7vrArWLwwJnyL3IsiYrhoiaMFWJRpjnhSf16l/IcoO3+s8HRJOzQrw5HJsNM9KbnOxodYTew+lC4OqZgQIDAQAB     1800 
-tiaoboo.com "v=spf1 a mx include:_spf.tiaoboo.com include:_spf.google.com" ~all 600   # the a is important  
-tiaoboo.com "google-site-verification=qttqrxdf9j3-h1f2srpiszt1w9giqqygwaflyhleg4q"
-</code></pre>
-
-<h4>How to switch domain?</h4>
-
-<ul>
-<li><p>edit main.cf, replace all the tiaoboo.com to blabla.net</p></li>
-<li><p>generate opendkim keys</p>
-
-<p>mkdir /etc/opendkim/keys/blabla.net
-/usr/local/sbin/opendkim-genkey -D /etc/opendkim/keys/blabla.net/ -d blabla.net -s default
-chown -R opendkim:opendkim /etc/opendkim/keys/tiaoboo.net
-mv /etc/opendkim/keys/tiaoboo.com/default.private /etc/opendkim/keys/tiaoboo.com/default</p></li>
-<li><p>Edit <code>/etc/opendkim/SigningTable</code></p>
-
-<p>*@blabla.net default._domainkey.blabla.net</p></li>
-<li><p>Edit <code>/etc/opendkim/TrustedHosts</code></p>
-
-<p>127.0.0.1/8
-tiaoboo.com
-blabla.net</p></li>
-<li><p>Add DNS file</p>
-
-<p><em>adsp.</em>domainkey.blabla.com    IN    TXT    &#8220;dkim=unknown&#8221; 3600
-<em>domainkey.blabla.com          IN    TXT    &#8220;o=~;*         3600
-</em>spf.blabla.com                IN    TXT    &#8220;ip4:66.135.35.84&#8221;  600
-default._domainkey.blabla.com  IN    TXT    &#8220;v=DKIM1; k=rsa;
-p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDFkbFiloMnbWBkt/Q9dVTLAqcr536yJj7jmdyZVoMNJXHZrio78OFnGxCGjbJm3iPZ07YXhjhP0YIYi4SdpQD5w8JIB7vrArWLwwJnyL3IsiYrhoiaMFWJRpjnhSf16l/IcoO3+s8HRJOzQrw5HJsNM9KbnOxodYTew+lC4OqZgQIDAQAB&#8221;  1800</p></li>
-<li><p> restart dk-mailter, opendkim, postfix</p></li>
-</ul>
-
-
-<h4>Issue fixing###</h4>
-
-<ul>
-<li><p>X-Authentication-Warning</p>
-
-<p>X-Authentication-Warning: server1.mysite.com: apache set sender to webmaster@mysite.com using -f
-X-Authentication-Warning: server1.mysite.com: apache set sender to webmaster@mysite.com using -f
-X-Authentication-Warning: p3100221.pubip.serverbeach.com: nginx set sender to noreply@blani.net using -f</p></li>
-</ul>
-
-
-<p>Solution:</p>
-
-<p>   Add apache or nginx to <code>/etc/mail/trusted-users</code></p>
-
-<ul>
-<li><p>Email issue, can&#8217;t open admin.</p>
-
-<p>[15-Jan-2013 09:52:49 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /var/www/php/wordpress/wp-content/themes/Blanee/functions.php:52) in /var/www/php/wordpress/wp-content/plugins/nginx-compatibility/nginx-compatibility.php on line 69</p></li>
-</ul>
-
-
-<p>Solution:</p>
-
-<pre><code>there is a space at the end of /var/www/php/wordpress/wp-content/themes/Blanee/functions.php, remove it and it works.:
-</code></pre>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/01/07/setup-new-environment/">Setup New Environment</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-01-07T13:32:00+08:00" pubdate data-updated="true">Jan 7<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h3>install RVM</h3>
-
-<h3>安装系统需要的包</h3>
-
-<pre><code>yum install build-essential openssl curl libcurl3-dev libreadline6 libreadline6-dev git zlib1g zlib1g-dev libssl-dev libyaml-dev libxml2-dev libxslt-dev autoconf automake libtool imagemagick libmagickwand-dev libpcre3-dev libsqlite3-dev
-
-
-yum install gcc-c++ 
-yum install readline-devel
-yum install zlib-devel 
-yum install openssl-devel 
-</code></pre>
-
-<h3>安装mysql</h3>
-
-<pre><code>yum install mysql mysql-server   mysql-devel.x86_64 
-/sbin/service mysqld start
-/sbin/chkconfig --list mysql
-默认即可登陆， 账号root, 密码空
-</code></pre>
-
-<h3>安装imagemagick</h3>
-
-<pre><code>yum install libtool-ltdl libtool-ltdl-devel freetype freetype-devel fontconfig-devel
-</code></pre>
-
-<p>Centos 5.x</p>
-
-<pre><code>wget http://dl.fedoraproject.org/pub/epel/5/i386/epel-release-5-4.noarch.rpm
-wget http://rpms.famillecollet.com/enterprise/remi-release-5.rpm
-sudo rpm -Uvh remi-release-5*.rpm epel-release-5*.rpm
-</code></pre>
-
-<p>Centos 6.x</p>
-
-<pre><code>wget http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-wget http://rpms.famillecollet.com/enterprise/remi-release-6.rpm
-sudo rpm -Uvh remi-release-6*.rpm epel-release-6*.rpm
-</code></pre>
-
-<p>Contnue</p>
-
-<pre><code>yum --enablerepo=epel install jasper jasper-libs jasper-devel
-
-yum install OpenEXR-devel.i686 OpenEXR-libs.i686 OpenEXR-devel.x86_64 OpenEXR-libs.x86_64
-
-
-yum install ImageMagick.x86_64 ImageMagick-devel.x86_64
-yum remove ImageMagick  #这种方式可以安装很多依赖包。虽然不够优雅
-
-yum install xz-devel.x86_64
-yum install fftw3.x86_64 fftw3-devel.x86_64
-
-wget http://www.imagemagick.org/download/linux/CentOS/x86_64/ImageMagick-6.8.1-9.x86_64.rpm
-rpm -Uvh ImageMagick-6.8.1-9.x86_64.rpm
-
-yum install freetype
-yum install gd-devel
-wget http://www.osresources.com/files/centos-windows-fonts/msfonts.tbz
-mkdir /usr/share/fonts/default/TrueType
-tar xvjpf msfonts.tbz -C /usr/share/fonts/default/TrueType/
-
-
-yum install fftw3-devel fontconfig-devel libtool-ltdl-devel -y
-/sbin/ldconfig  /usr/local/lib
-</code></pre>
-
-<p>=========================================</p>
-
-<pre><code>以上步骤有问题。
-把本库里ImageMagick.tar.gz里软件全部装好就可使用。 很简单。 rpm -Uvh
-</code></pre>
-
-<p>xx 是安装， rpm -e xxx 是卸载.</p>
-
-<p>=========================================</p>
-
-<pre><code>yum install curl.x86_64  curl-devel.x86_64 
-gem install curb -v=0.7.8
-gem install curb -v=0.7.7.1
-
-yum install libxml++.x86_64 libxml2.x86_64  libxml2-devel.x86_64 libxslt.x86_64 libxslt-devel.x86_64
-gem install google-spreadsheet-ruby -v=0.1.5
-gem install nokogiri -v=1.5.0
-gem install nokogiri -v=1.4.4
-gem install nokogiri -v=1.4.3.1
-gem install roo -v=1.9.6
-
-yum install aspell.x86_64  aspell-devel.x86_64 enchant-aspell.x86_64
-</code></pre>
-
-<p>aspell-en.x86_64   aspell-fr.x86_64</p>
-
-<pre><code>gem install raspell -v=1.2
-</code></pre>
-
-<h3>安装nginx</h3>
-
-<h3>integrate passenger with nginx</h3>
-
-<h4>Installing other dependencies</h4>
-
-<p>Both Passenger and Nginx, as one would expect, have various dependencies. The list below is exhaustive for the configuration I outline, but if you compile more modules into Nginx then you may have to install additional prerequisites.</p>
-
-<pre><code>$ apt-get install build-essential libpcre3-dev libssl-dev zlib1g
-</code></pre>
-
-<p>Nginx’s HTTP rewrite module requires the PCRE library sources, so it can parse regular expressions in location directives. It also needs the OpenSSL header files for SSL support, and zlib so that responses can be compressed.</p>
-
-<h4>Installing the Passenger gem</h4>
-
-<pre><code>gem install passenger
-
-$ passenger-config --root
-/usr/local/lib/ruby/gems/1.9.1/gems/passenger-3.0.17
-
-$ PASSENGER_NGINX_DIR=`passenger-config --root`/ext/nginx
-</code></pre>
-
-<h4>Downloading the PCRE source</h4>
-
-<h4>安装PCRE</h4>
-
-<pre><code>$ cd /usr/local/src
-$ wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.31.tar.gz
-$ tar -xzvf pcre-8.31.tar.gz
-$ cd pcre-8.31
-$ PCRE_DIR=`pwd`
-</code></pre>
-
-<h4>Compiling Nginx</h4>
-
-<pre><code>$ cd /usr/local/src
-$ wget http://nginx.org/download/nginx-1.2.4.tar.gz
-$ tar -xzvf nginx-1.2.4.tar.gz
-$ cd nginx-1.2.4
-$ NGINX_SRC_DIR=`pwd`
-</code></pre>
-
-<p>安装</p>
-
-<pre><code>$ ./configure \
-  --prefix=/usr/local \
-  --sbin-path=/usr/local/sbin \
-  --conf-path=/etc/nginx/nginx.conf \
-  --error-log-path=/var/log/nginx/error.log \
-  --http-log-path=/var/log/nginx/access.log \
-  --with-http_ssl_module \
-  --with-http_gzip_static_module \
-  --add-module=$PASSENGER_NGINX_DIR \
-  --with-pcre=$PCRE_DIR \
-  --with-http_sub_module \
-  --with-http_realip_module   --with-http_stub_status_module 
-$ make
-$ make install
-</code></pre>
-
-<p>注意pcre和passenger的位置。 吧passenger编译进去。</p>
-
-<p>编辑nginx</p>
-
-<pre><code>$ chmod +x /etc/init.d/nginx
-$ /usr/sbin/update-rc.d -f nginx defaults
-</code></pre>
-
-<p>复制conf</p>
-
-<pre><code>$ cd $NGINX_SRC_DIR
-$ cp -R conf /etc/nginx
-$ mdkir /etc/nginx/conf.d
-</code></pre>
-
-<p>Then edit <code>/etc/nginx/nginx.conf</code> and add the following line before the end of the http block.</p>
-
-<pre><code>include /etc/nginx/conf.d/*.conf;
-</code></pre>
-
-<p>增加. <code>/etc/nginx/conf.d/000-passenger.conf</code>并增加以下行， 确认具体路径。</p>
-
-<pre><code>passenger_root /usr/local/lib/ruby/gems/1.9.1/gems/passenger-3.0.17; # passenger-config --root 可以输出路径
-passenger_ruby /usr/local/bin/ruby;
-</code></pre>
-
-<p>最简配置</p>
-
-<pre><code>server {
-  listen 80;
-  server_name myrackapp.net;
-  root /var/www/myrackapp.net/public;
-  passenger_enabled on;
-  rails_env production;
-}
-</code></pre>
-
-<p>确认：</p>
-
-<pre><code>$ cd $NGINX_SRC_DIR
-$ nginx -V
-nginx version: nginx/1.2.4
-built by gcc 4.4.3 (Ubuntu 4.4.3-4ubuntu5.1)
-TLS SNI support enabled
-configure arguments: --prefix=/usr/local --sbin-path=/usr/local/sbin
---conf-path=/etc/nginx/nginx.conf
---error-log-path=/var/log/nginx/error.log
---http-log-path=/var/log/nginx/access.log
---with-pcre=/usr/local/src/pcre-8.31
---add-module=/usr/local/lib/ruby/gems/1.9.1/gems/passenger-3.0.17/ext/nginx
---with-http_ssl_module --with-http_gzip_static_module
---with-http_sub_module
-</code></pre>
-
-<p>这样可以看到输出。</p>
-
-<p>以上方法完全可以不用rvmsudo ..install_nginx….</p>
-
-<h3>install memcache</h3>
-
-<pre><code>wget http://pkgs.repoforge.org/rpmforge-release/rpmforge-release-0.5.2-2.el5.rf.x86_64.rpm
-rpm -ivh rpmforge-release-0.5.2-2.el5.rf.x86_64.rpm 
-
-yum install --enablerepo=rpmforge  memcached.x86_64 memcached-devel.x86_64 libmemcached.x86_64  libmemcached-devel.x86_64 libmemcache.x86_64 libmemcache-devel.x86_64  perl-Apache-Session-Memcached.noarch perl-Cache-Memcached.noarch perl-Memcached-libmemcached.x86_64 php-pecl-memcache.x86_64  php-pecl-memcached.x86_64  redis.x86_64 rubygem-moneta.noarch 
-
-#用不了这么多， 我是图省事
-</code></pre>
-
-<h3>download the rvm</h3>
-
-<pre><code>sudo gem update --system 1.3.7 or rvm install rubygems 1.3.7
-</code></pre>
-
-<h3>后续</h3>
-
-<p>安装代码， capistrano，</p>
-
-<h3>FAQ</h3>
-
-<h4>每次更新数据库总会报错</h4>
-
-<pre><code>Sphinx cannot be found on your system. You may need to configure the
-following
-settings in your config/sphinx.yml file:
-  * bin_path
-  * searchd_binary_name
-  * indexer_binary_name
-</code></pre>
-
-<p>解决办法有两个：</p>
-
-<ol>
-<li>运行indexer,获得版本号， 然后在sphinx.yml里增加 version: 0.9.9
-(e.g.)</li>
-<li>升级使用版本较高的sphinx</li>
-</ol>
-
-
-<h4>没错rake都出现一条错</h4>
-
-<pre><code>WARNING: 'require 'rake/rdoctask'' is deprecated.  Please use 'require 'rdoc/task' (in RDoc 2.4.2+)' instead.
-at /usr/local/rvm/gems/ree-1.8.7-2011.03/gems/rake-0.9.2.2/lib/rake/rdoctask.rb
-</code></pre>
-
-<p>解决办法：</p>
-
-<pre><code>gem install rdoc
-</code></pre>
-
-<p>编辑Rakefile</p>
-
-<pre><code>#require 'rake/rdoctask'
-require 'rdoc/task'
-</code></pre>
-
-<h4>sync files</h4>
-
-<p>Local folder to remote folder, using a domain, an IP address and a server defined in the SSH configuration file:</p>
-
-<pre><code>rsync -rtvz source_folder/ user@domain:/path/to/destination_folder/
-rsync -rtvz source_folder/ user@xxx.xxx.xxx.xxx:/path/to/destination_folder/
-rsync -rtvz source_folder/ server_name:/path/to/destination_folder/
-</code></pre>
-
-<p>Remote folder to local folder, using a domain, an IP address and a server defined in the SSH configuration file:</p>
-
-<pre><code>rsync -rtvz user@domain:/path/to/source_folder/ destination_folder/
-rsync -rtvz user@xxx.xxx.xxx.xxx:/path/to/source_folder/ destination_folder/
-rsync -rtvz server_name:/path/to/source_folder/ destination_folder/
-
-
-nohup rsync -rtvz blabla@66.66.66.66:/var/www/rails/blabla/shared/uploads  /var/www/rails/blabla/shared
-# copy uploads to shared/uploads.  
-#fast. and continual, 25G, 5 hours. 
-</code></pre>
-
-<p>exclude folders</p>
-
-<pre><code>rsync -rtv --exclude 'directory' source_folder/ destination_folder/
-rsync -rtv --exclude 'file.txt' source_folder/ destination_folder/
-rsync -rtv --exclude 'path/to/directory' source_folder/ destination_folder/
-rsync -rtv --exclude 'path/to/file.txt' source_folder/ destination_folder/
-</code></pre>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/01/07/%5B%3F%5D-dian-jing-yan-jiao-xun/">一点经验教训</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-01-07T12:27:00+08:00" pubdate data-updated="true">Jan 7<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h3>流量刚过15k，一个新的里程碑</h3>
-
-<p>坚持做两年的项目， 流量上了一个新阶段。</p>
-
-<p>很多问题随之产生， 这里就最近的一些经验。稍微总结一下。</p>
-
-<h3>数据库session表超大，导致dump文件超大，11G</h3>
-
-<p>最近数据库dump文件超大，一直欣慰的以为数据量大了，实则可笑至极。</p>
-
-<p>在解决这个问题过程中， 我找到几个方案。</p>
-
-<h4>数据量真的庞大</h4>
-
-<p>对数据做partition, 这样数据库更稳定。</p>
-
-<h4>有很庞大的表</h4>
-
-<p>如果数据不是很有价值，那么应该删除过期数据。
-如果数据很有价值，那么应该分表了。</p>
-
-<h3>Perconas是个好东西， 更省cpu</h3>
-
-<p>以后有机会，要换这个数据库。</p>
-
-<h3>数据库恢复时，手动restore 了一些表，</h3>
-
-<p>发现一下行其实是有作用的，否则容易出现法语乱码:</p>
-
-<blockquote><p>&#8211; MySQL dump 10.11
-  &#8211;
-  &#8211; Host: localhost    Database: blabla</p>
-
-<hr />
-
-<p>  &#8211; Server version5.0.92-log</p>
-
-<p>/<em>!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT </em>/;
-  /<em>!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS </em>/;
-  /<em>!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION </em>/;
-  /<em>!40101 SET NAMES utf8 </em>/;
-  /<em>!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE </em>/;
-  /<em>!40103 SET TIME_ZONE=&#8217;+00:00&#8217; </em>/;
-  /<em>!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 </em>/;
-  /<em>!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS,
-  FOREIGN_KEY_CHECKS=0 </em>/;
-  /<em>!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE=&#8217;NO_AUTO_VALUE_ON_ZERO&#8217;
-  </em>/;
-  /<em>!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 </em>/;</p></blockquote>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; 更早</a>
@@ -1752,23 +1096,23 @@ rsync -rtv --exclude 'path/to/file.txt' source_folder/ destination_folder/
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2013/03/20/fu-wu-qi-dang-ji-shi-jian/">服务器宕机时间</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/02/05/server-issues-fixing/">server issues fixing</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/19/ruby-1-dot-9-3-env/">ruby 1.9.3 env</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2013/01/18/crontab-issues-with-rvm/">crontab issues with rvm </a>
       </li>
     
       <li class="post">
         <a href="/blog/2013/01/16/install-hudson/">install hudson</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/16/wang-zhan-gong-ji-shi-li/">网站攻击实例</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/15/systembei-wang-lu/">system备忘录</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/15/install-tivoli/">install tivoli</a>
       </li>
     
   </ul>

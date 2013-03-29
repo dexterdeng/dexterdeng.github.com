@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>install hudson - 脑波网</title>
+  <title>ruby 1.9.3 env - 脑波网</title>
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="亲信官方文档， 导致错误 官方这么说： http://wiki.hudson-ci.org/display/HUDSON/Installing+Hudson+using+RPM+repository Installation
-sudo wget -O /etc/yum.repos.d/hudson &hellip;">
+  <meta name="description" content="downgrade rvm rvm get 1.10.1 这很重要， 否则就会出现以下#1问题。 install rvm . rvm list known
+rvm install ruby-1.9.3 rvm list 结果有问题: rvm rubies * ree-1.8.7-2011.03 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +19,7 @@ sudo wget -O /etc/yum.repos.d/hudson &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://dexterdeng.github.com/blog/2013/01/16/install-hudson/">
+  <link rel="canonical" href="http://dexterdeng.github.com/blog/2013/01/19/ruby-1-dot-9-3-env/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -70,7 +70,7 @@ sudo wget -O /etc/yum.repos.d/hudson &hellip;">
   
   <header>
     
-      <h1 class="entry-title">Install Hudson</h1>
+      <h1 class="entry-title">Ruby 1.9.3 Env</h1>
     
     
       <p class="meta">
@@ -86,74 +86,143 @@ sudo wget -O /etc/yum.repos.d/hudson &hellip;">
   
 
 
-<time datetime="2013-01-16T16:58:00+08:00" pubdate data-updated="true">Jan 16<span>th</span>, 2013</time>
+<time datetime="2013-01-19T15:32:00+08:00" pubdate data-updated="true">Jan 19<span>th</span>, 2013</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><h4>亲信官方文档， 导致错误</h4>
+<div class="entry-content"><h3>downgrade rvm</h3>
 
-<p>官方这么说： http://wiki.hudson-ci.org/display/HUDSON/Installing+Hudson+using+RPM+repository</p>
-
-<pre><code>Installation
-sudo wget -O /etc/yum.repos.d/hudson.repo http://hudson-ci.org/redhat/hudson.repo
-sudo yum check-update
-sudo yum install hudson
+<pre><code>rvm get 1.10.1  
+这很重要， 否则就会出现以下#1问题。
 </code></pre>
 
-<p>错！</p>
+<ol>
+<li>install rvm .</li>
+</ol>
 
-<p>第一行命令执行完， 得到一下结果：</p>
 
-<pre><code>Loaded plugins: fastestmirror, security
-Loading mirror speeds from cached hostfile
- * base: dist1.800hosting.com
- * epel: mirrors.servercentral.net
- * extras: mirror.rackspace.com
- * rpmforge: mirror.teklinks.com
- * updates: mirror.raystedman.net
-hudson/primary_db                                                                                                                                           | 5.0 kB     00:00     
-http://hudson-ci.org/redhat/repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2: [Errno -3] Error performing checksum
-Trying other mirror.
-Error: failure: repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2 from hudson: [Errno 256] No more mirrors to try.
+<pre><code>rvm list known
+rvm install ruby-1.9.3 
+rvm list
 </code></pre>
 
-<p>无论执行何yum命令，都会出现这个结果。</p>
+<p>结果有问题:</p>
+
+<pre><code>rvm rubies
+
+ * ree-1.8.7-2011.03 [ x86_64 ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.2-p290/config: 没有那个文件或目录
+ruby-1.9.2-p290 [  ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.3-p374/config: 没有那个文件或目录
+ruby-1.9.3-p374 [  ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.3-rc1/config: 没有那个文件或目录
+ruby-1.9.3-rc1 [  ]
+</code></pre>
 
 <p>解决：</p>
 
-<pre><code>rm /etc/yum.repos.d/hudson.repo
+<pre><code>rvm get stable
+rvm reinstall ruby-1.9.3-rc1
 </code></pre>
 
-<p>删掉yum.repos.d里hudson记录即可</p>
+<p>又有问题:</p>
 
-<h3>继续，重新开始</h3>
-
-<h4>安装JDK</h4>
-
-<pre><code>yum search java #找到最新，java
-
-yum install java-1.6.0-openjdk.x86_64 java-1.6.0-openjdk-devel.x86_64
+<pre><code>/usr/bin/env: bash: No such file or directory
 </code></pre>
 
-<h4>安装hudson</h4>
+<p>解决：</p>
 
-<pre><code>找到http://hudson-ci.org/redhat/RPMS/noarch/ 最新hudson rpm 按住包
-
-wget http://hudson-ci.org/redhat/RPMS/noarch/hudson-3.0.0-1.1.noarch.rpm
+<pre><code>rvm reload
+rvm reinstall ruby-1.9.3-rc1
 </code></pre>
 
-<p>配置：安装完之后，你可以在/etc/sysconfig/hudson设置启动用户（涉及到执行构建的权限），hudson主目录。</p>
+<p>搞定，将其他问题ruby全部重新安装。</p>
 
-<h4>启动hudson</h4>
-
-<pre><code>/sbin/service hudson start
+<pre><code>rvm reinstall ruby-1.9.2-p290  
+rvm reinstall ruby-1.9.3-374
 </code></pre>
 
-<p>open http://66.135.35.84:8080/
-choose plugins to install and click <code>instann</code></p>
+<h3>install elasticsearch</h3>
+
+<pre><code>wget http://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.20.2.tar.gz
+tar -xzvf elasticsearch-0.20.2.tar.gz 
+mv elasticsearch-0.20.2 elasticsearch
+mv elasticsearch /usr/local/share/
+curl -L http://github.com/elasticsearch/elasticsearch-servicewrapper/tarball/master | tar -xz
+mv *servicewrapper*/service /usr/local/share/elasticsearch/bin/
+rm -Rf *servicewrapper*
+/usr/local/share/elasticsearch/bin/service/elasticsearch install
+/etc/init.d/elasticsearch start
+</code></pre>
+
+<h3>配置nginx</h3>
+
+<p>更改 passenger_ruby和passenger_root后， 启动出现如下问题。</p>
+
+<pre><code># /sbin/service nginx restart
+
+停止 nginx：                                               [确定]
+启动 nginx：nginx: [alert] Unable to start the Phusion Passenger watchdog because its executable (/usr/local/rvm/gems/ruby-1.9.3-p362/gems/passenger-3.0.19/agents/PassengerWatchdog) does not exist. This probably means that your Phusion Passenger installation is broken or incomplete, or that your 'passenger_root' directive is set to the wrong value. Please reinstall Phusion Passenger or fix your 'passenger_root' directive, whichever is applicable. (-1: Unknown error)
+                                                           [确定]
+</code></pre>
+
+<p>解决：</p>
+
+<pre><code>passenger-config --root 
+rake nginx
+</code></pre>
+
+<h4>还有问题：cannot load such file &#8211; bundler</h4>
+
+<p>Error:</p>
+
+<pre><code>Error message:
+cannot load such file -- bundler
+</code></pre>
+
+<p>Solution:</p>
+
+<pre><code>#passenger_root /usr/local/rvm/gems/ree-1.8.7-2011.03/gems/passenger-2.2.15;
+#passenger_root /usr/local/rvm/gems/ree-1.8.7-2011.03/gems/passenger-3.0.5;
+
+passenger_root /usr/local/rvm/gems/ruby-1.9.3-p362/gems/passenger-3.0.19;
+
+#passenger_ruby /usr/local/rvm/rubies/ree-1.8.7-2011.03/bin/ruby;
+#passenger_ruby /usr/local/rvm/rubies/ruby-1.9.3-p362/bin/ruby;
+passenger_ruby /usr/local/rvm/wrappers/ruby-1.9.3-p362/ruby;
+</code></pre>
+
+<p>yg b</p>
+
+<pre><code>rails_spawn_method conservative;
+passenger_user_switching on;
+passenger_default_user nginx;
+passenger_default_group nginx;
+passenger_max_pool_size 45;
+</code></pre>
+
+<p>关键事这两句：</p>
+
+<pre><code>#passenger_ruby /usr/local/rvm/rubies/ruby-1.9.3-p362/bin/ruby;
+passenger_ruby /usr/local/rvm/wrappers/ruby-1.9.3-p362/ruby;
+</code></pre>
+
+<p>使用wrappers里的ruby</p>
+
+<h3>install node.js + juggernaut ###</h3>
+
+<p>I tried python3.3 with node 0.8.18,  0.8.* , doesn&#8217;t works.</p>
+
+<pre><code>git clone https://github.com/joyent/node.git
+git branch --track v0.6 origin/v0.6
+git checkout v0.6
+./configure
+make
+make install
+</code></pre>
 </div>
 
 
@@ -176,7 +245,7 @@ choose plugins to install and click <code>instann</code></p>
   
 
 
-<time datetime="2013-01-16T16:58:00+08:00" pubdate data-updated="true">Jan 16<span>th</span>, 2013</time>
+<time datetime="2013-01-19T15:32:00+08:00" pubdate data-updated="true">Jan 19<span>th</span>, 2013</time>
       
 
 <span class="categories">
@@ -190,7 +259,7 @@ choose plugins to install and click <code>instann</code></p>
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2013/01/16/install-hudson/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2013/01/16/install-hudson/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2013/01/19/ruby-1-dot-9-3-env/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2013/01/19/ruby-1-dot-9-3-env/" >Tweet</a>
   
   
   <div class="g-plusone" data-size="medium"></div>
@@ -203,10 +272,10 @@ choose plugins to install and click <code>instann</code></p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/01/16/wang-zhan-gong-ji-shi-li/" title="Previous Post: 网站攻击实例">&laquo; 网站攻击实例</a>
+        <a class="basic-alignment left" href="/blog/2013/01/18/crontab-issues-with-rvm/" title="Previous Post: crontab issues with rvm ">&laquo; crontab issues with rvm </a>
       
       
-        <a class="basic-alignment right" href="/blog/2013/01/18/crontab-issues-with-rvm/" title="Next Post: crontab issues with rvm ">crontab issues with rvm  &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2013/02/05/server-issues-fixing/" title="Next Post: server issues fixing">server issues fixing &raquo;</a>
       
     </p>
   </footer>
@@ -298,8 +367,8 @@ choose plugins to install and click <code>instann</code></p>
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://dexterdeng.github.com/blog/2013/01/16/install-hudson/';
-        var disqus_url = 'http://dexterdeng.github.com/blog/2013/01/16/install-hudson/';
+        var disqus_identifier = 'http://dexterdeng.github.com/blog/2013/01/19/ruby-1-dot-9-3-env/';
+        var disqus_url = 'http://dexterdeng.github.com/blog/2013/01/19/ruby-1-dot-9-3-env/';
         var disqus_script = 'embed.js';
       
     (function () {

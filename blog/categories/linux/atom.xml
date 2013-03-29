@@ -4,7 +4,7 @@
   <title><![CDATA[Category: linux | 脑波网]]></title>
   <link href="http://dexterdeng.github.com/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2013-01-18T18:15:44+08:00</updated>
+  <updated>2013-03-29T16:56:48+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,386 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[服务器宕机时间]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/03/20/fu-wu-qi-dang-ji-shi-jian/"/>
+    <updated>2013-03-20T01:33:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/03/20/fu-wu-qi-dang-ji-shi-jian</id>
+    <content type="html"><![CDATA[<p>今天服务器意外宕机， 原因尚未查明，  查明后补上。</p>
+
+<p>时间是中午1点， 服务器忽然变得超慢, 迅速没响应。 这时候我很愚蠢，
+本来有一点时间输入一条命令的，结果我输了个git pull.
+如果当时用top查看谁在坏事，或许结果会不一样。</p>
+
+<p>2点， 服务器可以ping通， 但是，只hudson 启动。
+并机房的人说，机器出现io错误。  根源应该是这个。</p>
+
+<pre><code>scsi 0:0:1:0: Attached scsi generic sg1 type 0
+sd 0:1:0:0: Attached scsi generic sg2 type 0
+floppy0: no floppy controllers found
+work still pending
+lp: driver loaded but no devices found
+ACPI: Power Button (FF) [PWRF]
+ACPI: Mapper loaded
+dell-wmi: No known WMI GUID found
+ACPI Exception (evregion-0424): AE_SUPPORT, Returned by Handler for [DataTable] [20060707]
+ACPI Error (psparse-0537): Method parse/execution failed [\_SB_.PMI0._GHL] (Node ffff81033005b8b0), AE_SUPPORT
+ACPI Error (psparse-0537): Method parse/execution failed [\_SB_.PMI0._PMC] (Node ffff81033005b8f0), AE_SUPPORT
+ACPI Exception (power_meter-0759): AE_SUPPORT, Evaluating _PMC [20060707]
+</code></pre>
+
+<p>几经周折，工作人员执意reloadserver, 3小时后， 旧hdd用usb线插入机器。
+(这里要检查是不是usb2.0. 否则拷贝很慢。</p>
+
+<pre><code>lsmod | grep hci
+The output should look something like this:
+
+uhci_hcd               22404  0 
+ehci_hcd               34688  0 
+usbcore               134576  5 oss_usb,usbhid,uhci_hcd,ehci_hcd
+If it only shows uhci and not ehci, then the usb 2.0 drivers just aren't loading）
+</code></pre>
+
+<p>下面事识别旧hdd。 这里比较麻烦，因为hdd上做了raid， 能看到的事linux lvm.
+不知道fs type. 导致 mount  不成功。</p>
+
+<h3>详细挂载步骤：…</h3>
+
+<h4>查看设备名称。</h4>
+
+<pre><code>cd /dev/disk
+
+tree -L 2
+.
+|-- by-id
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04 -&gt; ../../sda
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04-part1 -&gt; ../../sda1
+|   |-- scsi-3600508e0000000003c1ef40bba1a8f04-part2 -&gt; ../../sda2
+|   |-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003 -&gt; ../../sdb
+|   |-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003-part1 -&gt; ../../sdb1
+|   `-- usb-WDC_WD25_03ABYX-01WERA0_D577A9016003-part2 -&gt; ../../sdb2
+|-- by-label
+|   `-- boot -&gt; ../../sdb1
+|-- by-path
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0 -&gt; ../../sdb
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0-part1 -&gt; ../../sdb1
+|   |-- pci-0000:00:1a.7-usb-0:1:1.0-scsi-0:0:0:0-part2 -&gt; ../../sdb2
+|   |-- pci-0000:02:00.0-scsi-0:1:0:0 -&gt; ../../sda
+|   |-- pci-0000:02:00.0-scsi-0:1:0:0-part1 -&gt; ../../sda1
+|   `-- pci-0000:02:00.0-scsi-0:1:0:0-part2 -&gt; ../../sda2
+`-- by-uuid
+    |-- 6e483701-3665-4369-b304-a0b997ca810d -&gt; ../../sda1
+    `-- f38282ea-3a5b-4b90-b48b-2b8573b08d9e -&gt; ../../sdb1
+
+可以看出， sdb1, sdb2 就是usb 连接的hdd。
+</code></pre>
+
+<h4>挂载失败</h4>
+
+<pre><code>mkdir /mnt/u2
+mount /dev/sdb2 /mnt/u2 失败，尝试不同文件系统也不能成功。
+</code></pre>
+
+<p>使用 fdlisk 查看。</p>
+
+<pre><code>[root@p3100221 log]# /sbin/fdisk -l
+
+Disk /dev/sda: 250.4 GB, 250450280448 bytes
+255 heads, 63 sectors/track, 30448 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sda1   *           1          32      257008+  83  Linux
+/dev/sda2              33       30448   244316520   8e  Linux LVM
+
+Disk /dev/sdb: 251.0 GB, 251059544064 bytes
+255 heads, 63 sectors/track, 30522 cylinders
+Units = cylinders of 16065 * 512 = 8225280 bytes
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1   *           1          32      257008+  83  Linux
+/dev/sdb2              33       30448   244316520   8e  Linux LVM
+</code></pre>
+
+<p> 由此可以断定， /dev/sdb2y而是一个逻辑分区。 因为做了raid的原因。
+所以不可以用 mount -t
+的方式挂载，而`而应该吧逻辑分区挂到某地方,而这种分区通常名字叫 /dev/VolGroup 之类</p>
+
+<h4>识别</h4>
+
+<p>/dev里看到一个 VolGroup, 里面有2,3个文件， 是一个整体。</p>
+
+<h5>为什么有2个Linux LVM, 却只有一个 VolGroup?</h5>
+
+<p>由此想到，两个电脑上本来都有各自LVM， VolGroup重名也说不定。
+网上搜帖子进一步应证明我的想法。 网上找到一些方法改名。下面事我的做法。</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgscan 
+Reading all physical volumes.  This may take a while...
+Found volume group "VolGroup" using metadata type lvm2
+Found volume group "VolGroup" using metadata type lvm2
+</code></pre>
+
+<h4>重命名VolGroup</h4>
+
+<p>查看uuid， 根据uuid重命名.</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgs -v
+Finding all volume groups
+Finding volume group "VolGroup"
+Archiving volume group "VolGroup" metadata (seqno 3).
+Archiving volume group "VolGroup" metadata (seqno 3).
+Creating volume group backup "/etc/lvm/backup/VolGroup" (seqno 3).
+Finding volume group "VolGroup"
+Archiving volume group "VolGroup" metadata (seqno 3).
+Archiving volume group "VolGroup" metadata (seqno 3).
+Creating volume group backup "/etc/lvm/backup/VolGroup" (seqno 3).
+VG       Attr   Ext    #PV #LV #SN VSize   VFree VG UUID                               
+VolGroup wz--n- 32.00M   1   2   0 232.97G    0  DS7moo-4w7q-ehNa-hT23-8Xvo-52eu-dP11PE
+VolGroup wz--n- 32.00M   1   2   0 232.97G    0  VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp
+</code></pre>
+
+<p>将VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp 重命名为 VolGroup01</p>
+
+<pre><code>[root@p3100221 dev]# /usr/sbin/vgrename VlR1DC-Biky-Yh9g-NVs1-SiMd-yz54-moVblp VolGroup01
+Volume group "VolGroup" successfully renamed to "VolGroup01"
+</code></pre>
+
+<p>至此, 我们就可以看到2个group，但相应文件并没产生， （/dev/VolGroup01
+有， /dev/VolGroupm没有了）</p>
+
+<pre><code>重新产生文件
+/usr/sbin/lvchange VolGroup01 -a y   #means activate VolGroup01
+
+/usr/sbin/lvscan
+</code></pre>
+
+<h4>现在可以挂在了h</h4>
+
+<pre><code>mount /dev/VolGroup01/lv_root /mnt/u1
+mount /dev/VolGroup/lv_root   /mnt/u2
+</code></pre>
+
+<h4>千万主注意，</h4>
+
+<p>因为fstab里使用了这个名称，所以，用完一定要确保原本的VolGroup依然存在</p>
+
+<pre><code>umount /mnt/u1
+umount /mnt/u2
+/usr/sbin/vgrename VolGroup VolGroupold
+/usr/sbin/vgrename VolGroup01 VolGroup
+
+做这个操作因为我们的VolGroup刚好不是新hdd了。 
+</code></pre>
+
+<p>如果 umount /mnt/u2 时出现 device is busy</p>
+
+<pre><code> /sbin/fuser  -m -v /mnt/u2
+</code></pre>
+
+<p>杀死用它的进程即可。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[server issues fixing]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/02/05/server-issues-fixing/"/>
+    <updated>2013-02-05T15:30:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/02/05/server-issues-fixing</id>
+    <content type="html"><![CDATA[<h4>set xid back from a old db</h4>
+
+<pre><code>update new_db.businesses, old_db.businesses 
+set new_db.businesses.xid = old_db.businesses.xid 
+where new_db.businesses.id  =  old_db.businesses.id ;
+</code></pre>
+
+<h4>bla_path(:format => :js) 会出现xxx.js, 到服务器后，就会出现404.</h4>
+
+<p>这是nginx造成的。
+解决：</p>
+
+<pre><code>location ~* ^.+\.(jpg|jpeg|js|gif|css)$ {
+    root /var/www/rails/blanee/development/public;
+  access_log off;
+  expires 30d;
+}
+
+讲js拿出来, 否则每次.js就跑到public/javascripts
+
+
+location ~ ^/(javascripts)/ { # rails3 用 assets
+    root /var/www/rails/blanee/development/public;
+  access_log off;
+  expires 30d;
+}
+
+location ~* ^.+\.(jpg|jpeg|gif|css)$ {
+    root /var/www/rails/blanee/development/public;
+  access_log off;
+  expires 30d;
+}
+</code></pre>
+
+<h4>Loading... 会爆 index not matched 错，</h4>
+
+<p>Loading... 会爆 index not matched 错，</p>
+
+<p>所以， i18n翻译文件里， 不要用连续的点.来作为键的一部分。</p>
+
+<pre><code>Error message:
+
+string not matched
+
+Exception class:
+
+IndexError
+</code></pre>
+
+<h4>create temp  table</h4>
+
+<pre><code>CREATE TABLE table2 AS (SELECT * FROM table1)
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[ruby 1.9.3 env]]></title>
+    <link href="http://dexterdeng.github.com/blog/2013/01/19/ruby-1-dot-9-3-env/"/>
+    <updated>2013-01-19T15:32:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2013/01/19/ruby-1-dot-9-3-env</id>
+    <content type="html"><![CDATA[<h3>downgrade rvm</h3>
+
+<pre><code>rvm get 1.10.1  
+这很重要， 否则就会出现以下#1问题。
+</code></pre>
+
+<ol>
+<li>install rvm .</li>
+</ol>
+
+
+<pre><code>rvm list known
+rvm install ruby-1.9.3 
+rvm list
+</code></pre>
+
+<p>结果有问题:</p>
+
+<pre><code>rvm rubies
+
+ * ree-1.8.7-2011.03 [ x86_64 ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.2-p290/config: 没有那个文件或目录
+ruby-1.9.2-p290 [  ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.3-p374/config: 没有那个文件或目录
+ruby-1.9.3-p374 [  ]
+   /usr/local/rvm/scripts/list: line 329: /usr/local/rvm/rubies/ruby-1.9.3-rc1/config: 没有那个文件或目录
+ruby-1.9.3-rc1 [  ]
+</code></pre>
+
+<p>解决：</p>
+
+<pre><code>rvm get stable
+rvm reinstall ruby-1.9.3-rc1
+</code></pre>
+
+<p>又有问题:</p>
+
+<pre><code>/usr/bin/env: bash: No such file or directory
+</code></pre>
+
+<p>解决：</p>
+
+<pre><code>rvm reload
+rvm reinstall ruby-1.9.3-rc1
+</code></pre>
+
+<p>搞定，将其他问题ruby全部重新安装。</p>
+
+<pre><code>rvm reinstall ruby-1.9.2-p290  
+rvm reinstall ruby-1.9.3-374
+</code></pre>
+
+<h3>install elasticsearch</h3>
+
+<pre><code>wget http://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.20.2.tar.gz
+tar -xzvf elasticsearch-0.20.2.tar.gz 
+mv elasticsearch-0.20.2 elasticsearch
+mv elasticsearch /usr/local/share/
+curl -L http://github.com/elasticsearch/elasticsearch-servicewrapper/tarball/master | tar -xz
+mv *servicewrapper*/service /usr/local/share/elasticsearch/bin/
+rm -Rf *servicewrapper*
+/usr/local/share/elasticsearch/bin/service/elasticsearch install
+/etc/init.d/elasticsearch start
+</code></pre>
+
+<h3>配置nginx</h3>
+
+<p>更改 passenger_ruby和passenger_root后， 启动出现如下问题。</p>
+
+<pre><code># /sbin/service nginx restart
+
+停止 nginx：                                               [确定]
+启动 nginx：nginx: [alert] Unable to start the Phusion Passenger watchdog because its executable (/usr/local/rvm/gems/ruby-1.9.3-p362/gems/passenger-3.0.19/agents/PassengerWatchdog) does not exist. This probably means that your Phusion Passenger installation is broken or incomplete, or that your 'passenger_root' directive is set to the wrong value. Please reinstall Phusion Passenger or fix your 'passenger_root' directive, whichever is applicable. (-1: Unknown error)
+                                                           [确定]
+</code></pre>
+
+<p>解决：</p>
+
+<pre><code>passenger-config --root 
+rake nginx
+</code></pre>
+
+<h4>还有问题：cannot load such file -- bundler</h4>
+
+<p>Error:</p>
+
+<pre><code>Error message:
+cannot load such file -- bundler
+</code></pre>
+
+<p>Solution:</p>
+
+<pre><code>#passenger_root /usr/local/rvm/gems/ree-1.8.7-2011.03/gems/passenger-2.2.15;
+#passenger_root /usr/local/rvm/gems/ree-1.8.7-2011.03/gems/passenger-3.0.5;
+
+passenger_root /usr/local/rvm/gems/ruby-1.9.3-p362/gems/passenger-3.0.19;
+
+#passenger_ruby /usr/local/rvm/rubies/ree-1.8.7-2011.03/bin/ruby;
+#passenger_ruby /usr/local/rvm/rubies/ruby-1.9.3-p362/bin/ruby;
+passenger_ruby /usr/local/rvm/wrappers/ruby-1.9.3-p362/ruby;
+</code></pre>
+
+<p>yg b</p>
+
+<pre><code>rails_spawn_method conservative;
+passenger_user_switching on;
+passenger_default_user nginx;
+passenger_default_group nginx;
+passenger_max_pool_size 45;
+</code></pre>
+
+<p>关键事这两句：</p>
+
+<pre><code>#passenger_ruby /usr/local/rvm/rubies/ruby-1.9.3-p362/bin/ruby;
+passenger_ruby /usr/local/rvm/wrappers/ruby-1.9.3-p362/ruby;
+</code></pre>
+
+<p>使用wrappers里的ruby</p>
+
+<h3>install node.js + juggernaut ###</h3>
+
+<p>I tried python3.3 with node 0.8.18,  0.8.* , doesn't works.</p>
+
+<pre><code>git clone https://github.com/joyent/node.git
+git branch --track v0.6 origin/v0.6
+git checkout v0.6
+./configure
+make
+make install
+</code></pre>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[crontab issues with rvm ]]></title>
@@ -167,65 +547,6 @@ wget http://hudson-ci.org/redhat/RPMS/noarch/hudson-3.0.0-1.1.noarch.rpm
 
 <p>open http://66.135.35.84:8080/
 choose plugins to install and click <code>instann</code></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[网站攻击实例]]></title>
-    <link href="http://dexterdeng.github.com/blog/2013/01/16/wang-zhan-gong-ji-shi-li/"/>
-    <updated>2013-01-16T00:06:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2013/01/16/wang-zhan-gong-ji-shi-li</id>
-    <content type="html"><![CDATA[<pre><code>http://dev.blanee.com/recherche?city_id=city_32&amp;loc=Casablanca&amp;query=999999.9+union+all+select+0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536%2C0x31303235343830303536--
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[system备忘录]]></title>
-    <link href="http://dexterdeng.github.com/blog/2013/01/15/systembei-wang-lu/"/>
-    <updated>2013-01-15T15:24:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2013/01/15/systembei-wang-lu</id>
-    <content type="html"><![CDATA[<ul>
-<li>要想fb功能work， 需要确保认证的cacert.pem 在/public/</li>
-<li><p>以下配置需要视具体情况变更</p>
-
-<p>ENV["MAGICK_CODER_MODULE_PATH"]="/usr/lib64/ImageMagick-6.7.0/modules-Q16/coders/"</p>
-
-<p>ENV["GS_FONTPATH"] = "/usr/share/ghostscript/fonts"</p>
-
-<h1>ENV["MAGICK_CONFIGURE_PATH"]="/usr/local/lib/ImageMagick-6.6.3/config"</h1>
-
-<p>ENV["GS_LIB"] = "/usr/share/ghostscript/fonts"</p>
-
-<p>Paperclip.options[:command_path] = "/usr/bin"
-Paperclip.options[:swallow_stderr] = false</p></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[install tivoli]]></title>
-    <link href="http://dexterdeng.github.com/blog/2013/01/15/install-tivoli/"/>
-    <updated>2013-01-15T15:21:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2013/01/15/install-tivoli</id>
-    <content type="html"><![CDATA[<pre><code>rpm -ivh gsk*
-rpm -ivh TIVsm-* tsm-6.2.2.6-P1MH8.x86_64.rpm
-yum install compat-libstdc++-33
-rpm -ivh TIVsm-* tsm-6.2.2.6-P1MH8.x86_64.rpm
-/opt/tivoli/tsm/client/ba/bin/dsmconf
-dsmc
-/etc/rc.d/init.d/dsmcad restart
-/etc/rc.d/init.d/dsmc restart
-ps aux | grep dsmc
-cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
-/etc/rc.d/init.d/dsmcad restart
-/etc/rc.d/init.d/dsmc restart
-ps aux | grep dsmc
-cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
-cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
-cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
-</code></pre>
 ]]></content>
   </entry>
   
