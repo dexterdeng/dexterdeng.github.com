@@ -4,7 +4,7 @@
   <title><![CDATA[脑波网]]></title>
   <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2013-03-29T16:56:48+08:00</updated>
+  <updated>2014-05-12T13:37:06+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,255 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Setting up a new rbenv environment on centos]]></title>
+    <link href="http://dexterdeng.github.com/blog/2014/05/11/setting-up-a-new-rbenv-environment-on-centos/"/>
+    <updated>2014-05-11T12:22:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2014/05/11/setting-up-a-new-rbenv-environment-on-centos</id>
+    <content type="html"><![CDATA[<p>从零开始新部署一台服务器，把过程记下来，以后能快点。</p>
+
+<p>首先， 使用<code>uname -a</code>确定系统是 x86_64 还是 i386.</p>
+
+<ol>
+<li>安装Percona数据库。</li>
+</ol>
+
+
+<p> 1.1 删除自带mysql</p>
+
+<pre><code>rpm -qa | grep mysql #列出自带mysql包。
+</code></pre>
+
+<p>得到以下结果:</p>
+
+<pre><code>mysql-connector-odbc-3.51.26r1127-1.el5
+mysql-5.0.77-4.el5_6.6
+libdbi-dbd-mysql-0.8.1a-1.2.2
+mysql-server-5.0.77-4.el5_6.6
+</code></pre>
+
+<p>使用 <code>yum remove xxxx</code> 逐一删除干净。</p>
+
+<p>1.2 添加新 pecona 到yum的源中。</p>
+
+<pre><code>rpm -Uhv http://www.percona.com/redir/downloads/percona-release/percona-release-0.0-1.i386.rpm
+</code></pre>
+
+<p>或者</p>
+
+<pre><code>rpm -Uhv http://www.percona.com/redir/downloads/percona-release/percona-release-0.0-1.x86_64.rpm
+</code></pre>
+
+<p>或者，先<code>wget xxx</code>, 再 <code>rpm</code> 安装。</p>
+
+<pre><code>yum list |grep percona  #有结果表示成功
+percona-release.i386 0.0-1 installed
+Percona-SQL-50-debuginfo.i686 5.0.92-b23.88.rhel6 percona
+Percona-SQL-client-50.i686 5.0.92-b23.88.rhel6 percona
+....
+</code></pre>
+
+<p>1.3 傻瓜式一部安装一些依赖包</p>
+
+<pre><code>yum install -y gcc gcc-c++ autoconf automake zlib* fiex* libxml* ncurses-devel libmcrypt* libtool-ltdl-devel* cmake bison 
+</code></pre>
+
+<p>1.4 安装 Percona</p>
+
+<pre><code>yum install Percona-Server-shared-compat Percona-Server-client-55 Percona-Server-server-55 Percona-Server-shared-55 Percona-Server-test-55  percona-xtrabackup-20
+</code></pre>
+
+<p>安装&#8230;</p>
+
+<pre><code>Dependencies Resolved
+
+=====================================================================================================================================================================================
+ Package                                                Arch                           Version                                               Repository                         Size
+=====================================================================================================================================================================================
+Installing:
+ Percona-Server-client-55                               i386                           5.5.37-rel35.0.el5                                    percona                           8.0 M
+ Percona-Server-server-55                               i386                           5.5.37-rel35.0.el5                                    percona                            19 M
+ Percona-Server-shared-55                               i386                           5.5.37-rel35.0.el5                                    percona                           820 k
+ Percona-Server-shared-compat                           i386                           5.1.68-rel14.6.551.rhel5                              percona                           5.0 M
+ Percona-Server-test-55                                 i386                           5.5.37-rel35.0.el5                                    percona                           9.4 M
+ percona-xtrabackup-20                                  i386                           2.0.8-587.rhel5      
+</code></pre>
+
+<p>1.5  启动mysql</p>
+
+<pre><code>/etc/init.d/mysql start
+</code></pre>
+
+<p>安全配置</p>
+
+<pre><code>/usr/bin/mysql_secure_installation
+</code></pre>
+
+<ol>
+<li>安装 Mongodb</li>
+</ol>
+
+
+<p>2.1 配置包管理系统</p>
+
+<p>创建 <code>/etc/yum.repos.d/mongodb.repo</code> 用来保存mongodb 配置。</p>
+
+<p>64-bit system:</p>
+
+<pre><code>[mongodb]
+name=MongoDB Repository
+baseurl=http://downloads-distro.mongodb.org/repo/redhat/os/x86_64/
+gpgcheck=0
+enabled=1
+</code></pre>
+
+<p>32-bit system:</p>
+
+<pre><code>[mongodb]
+name=MongoDB Repository
+baseurl=http://downloads-distro.mongodb.org/repo/redhat/os/i686/
+gpgcheck=0
+enabled=1
+</code></pre>
+
+<p>2.1 安装mongodb 包和相关软件</p>
+
+<p>安装最新mongoDB.</p>
+
+<pre><code>sudo yum install mongodb-org
+</code></pre>
+
+<p>如果安装指定版本如2.6.1</p>
+
+<pre><code>sudo yum install mongodb-org-2.6.1 mongodb-org-server-2.6.1 mongodb-org-shell-2.6.1 mongodb-org-mongos-2.6.1 mongodb-org-tools-2.6.1
+</code></pre>
+
+<p>2.2 启动 mongoDB</p>
+
+<p>MongoDB的数据存 <code>/var/lib/mongo</code>, 日志存 <code>/var/log/mongo</code>, 使用mongod 账号启动， 如果你想更改启动账号，你也需要同时更改这两个目录的访问控制。</p>
+
+<p>启动：</p>
+
+<pre><code>sudo service mongod start
+</code></pre>
+
+<p>配置开机启动：</p>
+
+<pre><code>sudo chkconfig mongod on
+</code></pre>
+
+<p>关闭：</p>
+
+<pre><code>sudo service mongod stop
+</code></pre>
+
+<p>重启</p>
+
+<pre><code>sudo service mongod restart
+</code></pre>
+
+<ol>
+<li><p>创建app账号</p>
+
+<p> useradd app</p></li>
+<li><p>安装 基础包</p>
+
+<p> rpm -Uvh http://dl.fedoraproject.org/pub/epel/5/i386/epel-release-5-4.noarch.rpm
+ yum install -y gcc-c++ patch readline readline-devel zlib zlib-devel libyaml-devel libffi-devel openssl-devel   make bzip2 autoconf automake libtool bison iconv-devel git-core</p></li>
+</ol>
+
+
+<h1>安装rbenv</h1>
+
+<pre><code>git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
+# 用来编译安装 ruby
+git clone git://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+# 用来管理 gemset, 可选, 因为有 bundler 也没什么必要
+git clone git://github.com/jamis/rbenv-gemset.git  ~/.rbenv/plugins/rbenv-gemset
+# 通过 gem 命令安装完 gem 后无需手动输入 rbenv rehash 命令, 推荐
+git clone git://github.com/sstephenson/rbenv-gem-rehash.git ~/.rbenv/plugins/rbenv-gem-rehash
+# 通过 rbenv update 命令来更新 rbenv 以及所有插件, 推荐
+git clone https://github.com/rkh/rbenv-update.git ~/.rbenv/plugins/rbenv-update
+
+git clone git://github.com/dcarley/rbenv-sudo.git ~/.rbenv/plugins/rbenv-sudo
+</code></pre>
+
+<p>然后把下面的代码放到 <code>~/.bash_profile</code> 里</p>
+
+<pre><code>export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
+</code></pre>
+
+<p><strong>注意</strong> Unubtu请放到 <code>~/.bashrc</code> 里, zsh用户是 <code>~/.zshrc</code></p>
+
+<p>然后重开一个终端就可以执行 rbenv 了.</p>
+
+<h1>使用</h1>
+
+<h2>安装 ruby</h2>
+
+<pre><code>rbenv install --list  # 列出所有 ruby 版本
+rbenv install 1.9.3-p392     # 安装 1.9.3-p392
+rbenv install jruby-1.7.3    # 安装 jruby-1.7.3
+</code></pre>
+
+<h2>列出版本</h2>
+
+<pre><code>rbenv versions               # 列出安装的版本
+rbenv version                # 列出正在使用的版本
+</code></pre>
+
+<h2>设置版本</h2>
+
+<pre><code>rbenv global 1.9.3-p392      # 默认使用 1.9.3-p392
+rbenv shell 1.9.3-p392       # 当前的 shell 使用 1.9.3-p392, 会设置一个 `RBENV_VERSION` 环境变量
+rbenv local jruby-1.7.3      # 当前目录使用 jruby-1.7.3, 会生成一个 `.rbenv-version` 文件
+</code></pre>
+
+<h2>其他</h2>
+
+<pre><code>rbenv rehash                 # 每当切换 ruby 版本和执行 bundle install 之后必须执行这个命令
+rbenv which irb              # 列出 irb 这个命令的完整路径
+rbenv whence irb             # 列出包含 irb 这个命令的版本
+</code></pre>
+
+<p>安装最新版ruby.</p>
+
+<pre><code>rbenv install 2.1.2
+</code></pre>
+
+<ol>
+<li><p>安装passenger</p>
+
+<p> rbenv global 2.1.2</p>
+
+<p> gem install bundler</p>
+
+<p> gem install passenger #-v=4.0.17</p>
+
+<p> rbenv rehash</p>
+
+<p> # Download nginx-1.6.0, download pcre-8.33
+ /home/app/nginx-1.6.0
+ /home/app/pcre-8.33</p>
+
+<p> rbenv sudo passenger-install-nginx-module
+ ->
+ 选Advanced
+ 选 /home/app/nginx-1.6.0o
+ 目标: /opt/nginx
+ 配置项增加：  &#8211;with-http_realip_module   &#8211;with-pcre=/home/app/pcre-8.33</p>
+
+<p> 安装&#8230;</p>
+
+<p> 复制/etc/init.d/nginx文件， 注意sbin和conf的配置目录。</p></li>
+</ol>
+
+
+<p>接下来的部分很简单, 不再赘述。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[服务器宕机时间]]></title>
@@ -2315,158 +2564,6 @@ end
 and <code>before_save/after_save</code> trigger <code>save</code> again. &#8230;  No ending.</p>
 
 <p>This is very important.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ Linux Grep OR , Grep AND, Grep NOT]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/11/03/linux-grep-or/"/>
-    <updated>2012-11-03T00:11:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/11/03/linux-grep-or</id>
-    <content type="html"><![CDATA[<p><strong>Question:</strong> Can you explain how to use <code>OR</code>, <code>AND</code> and <code>NOT</code> operators in Unix grep command with some examples?</p>
-
-<p><strong>Answer:</strong> In grep, we have options equivalent to <code>OR</code> and <code>NOT</code> operators. There is no grep <code>AND</code> opearator. But, you can simulate <code>AND</code> using patterns. The examples mentioned below will help you to understand how to use <code>OR</code>, <code>AND</code> and <code>NOT</code> in Linux grep command.</p>
-
-<p>The following employee.txt file is used in the following examples.</p>
-
-<pre><code>$ cat employee.txt
-100  Thomas  Manager    Sales       $5,000
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-400  Nisha   Manager    Marketing   $9,500
-500  Randy   Manager    Sales       $6,000
-</code></pre>
-
-<p>You already knew that grep is extremely powerful based on these grep command examples.</p>
-
-<h2>Grep OR Operator</h2>
-
-<p>Use any one of the following 4 methods for grep OR. I prefer method number 3 mentioned below for grep OR operator.</p>
-
-<h3>1. Grep OR Using \|</h3>
-
-<p>If you use the grep command without any option, you need to use <code>\|</code> to separate multiple patterns for the or condition.</p>
-
-<pre><code>grep 'pattern1\|pattern2' filename
-</code></pre>
-
-<p>For example, grep either Tech or Sales from the employee.txt file. Without the back slash in front of the pipe, the following will not work.</p>
-
-<pre><code>$ grep 'Tech\|Sales' employee.txt
-100  Thomas  Manager    Sales       $5,000
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-500  Randy   Manager    Sales       $6,000
-</code></pre>
-
-<h3>2. Grep OR Using -E</h3>
-
-<p><code>grep -E</code> option is for extended regexp. If you use the grep command with <code>-E</code> option, you just need to use | to separate multiple patterns for the or condition.</p>
-
-<pre><code>grep -E 'pattern1|pattern2' filename
-</code></pre>
-
-<p>For example, grep either Tech or Sales from the employee.txt file. Just use the | to separate multiple OR patterns.</p>
-
-<pre><code>$ grep -E 'Tech|Sales' employee.txt
-100  Thomas  Manager    Sales       $5,000
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-500  Randy   Manager    Sales       $6,000
-</code></pre>
-
-<h3>3. Grep OR Using egrep</h3>
-
-<p>egrep is exactly same as <code>grep -E</code>. So, use egrep (without any option) and separate multiple patterns for the or condition.</p>
-
-<pre><code>egrep 'pattern1|pattern2' filename
-</code></pre>
-
-<p>For example, grep either Tech or Sales from the employee.txt file. Just use the | to separate multiple OR patterns.</p>
-
-<pre><code>$ egrep 'Tech|Sales' employee.txt
-100  Thomas  Manager    Sales       $5,000
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-500  Randy   Manager    Sales       $6,000
-</code></pre>
-
-<h3>4. Grep OR Using grep -e</h3>
-
-<p>Using grep -e option you can pass only one parameter. Use multiple <code>-e</code> option in a single command to use multiple patterns for the or condition.</p>
-
-<pre><code>grep -e pattern1 -e pattern2 filename
-</code></pre>
-
-<p>For example, grep either Tech or Sales from the employee.txt file. Use multiple <code>-e</code> option with grep for the multiple OR patterns.</p>
-
-<pre><code>$ grep -e Tech -e Sales employee.txt
-100  Thomas  Manager    Sales       $5,000
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-500  Randy   Manager    Sales       $6,000
-Grep AND
-</code></pre>
-
-<h3>5. Grep AND using <code>-E ‘pattern1.*pattern2'</code></h3>
-
-<p>There is no AND operator in grep. But, you can simulate AND using grep -E option.</p>
-
-<pre><code>grep -E 'pattern1.*pattern2' filename
-grep -E 'pattern1.*pattern2|pattern2.*pattern1' filename
-</code></pre>
-
-<p>The following example will grep all the lines that contain both “Dev” and “Tech” in it (in the same order).</p>
-
-<pre><code>$ grep -E 'Dev.*Tech' employee.txt
-200  Jason   Developer  Technology  $5,500
-</code></pre>
-
-<p>The following example will grep all the lines that contain both “Manager” and “Sales” in it (in any order).</p>
-
-<pre><code>$ grep -E 'Manager.*Sales|Sales.*Manager' employee.txt
-</code></pre>
-
-<p>Note: Using regular expressions in grep is very powerful if you know how to use it effectively.</p>
-
-<h3>6. Grep AND using Multiple grep command</h3>
-
-<p>You can also use multiple grep command separated by pipe to simulate AND scenario.</p>
-
-<pre><code>grep -E 'pattern1' filename | grep -E 'pattern2'
-</code></pre>
-
-<p>The following example will grep all the lines that contain both “Manager” and “Sales” in the same line.</p>
-
-<pre><code>$ grep Manager employee.txt | grep Sales
-100  Thomas  Manager    Sales       $5,000
-500  Randy   Manager    Sales       $6,000
-Grep NOT
-</code></pre>
-
-<h3>7. Grep NOT using grep -v</h3>
-
-<p>Using grep <code>-v</code> you can simulate the NOT conditions. <code>-v</code> option is for invert match. i.e It matches all the lines except the given pattern.</p>
-
-<pre><code>grep -v 'pattern1' filename
-</code></pre>
-
-<p>For example, display all the lines except those that contains the keyword “Sales”.</p>
-
-<pre><code>$ grep -v Sales employee.txt
-200  Jason   Developer  Technology  $5,500
-300  Raj     Sysadmin   Technology  $7,000
-400  Nisha   Manager    Marketing   $9,500
-</code></pre>
-
-<p>You can also combine NOT with other operator to get some powerful combinations.</p>
-
-<p>For example, the following will display either Manager or Developer (bot ignore Sales).</p>
-
-<pre><code>$ egrep 'Manager|Developer' employee.txt | grep -v Sales
-200  Jason   Developer  Technology  $5,500
-400  Nisha   Manager    Marketing   $9,500
-</code></pre>
 ]]></content>
   </entry>
   
