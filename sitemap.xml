@@ -114,11 +114,17 @@
         <loc>
             http://dexterdeng.github.com/blog/2014/05/11/setting-up-a-new-rbenv-environment-on-centos/
         </loc>
-        <lastmod>2014-05-12T13:37:06+08:00</lastmod>
+        <lastmod>2014-05-15T11:55:51+08:00</lastmod>
+    </url>
+    <url>
+        <loc>
+            http://dexterdeng.github.com/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/
+        </loc>
+        <lastmod>2014-05-15T19:12:58+08:00</lastmod>
     </url>
     <url>
         <loc>http://dexterdeng.github.com/blog/archives/</loc>
-        <lastmod>2014-05-12T13:37:06+08:00</lastmod>
+        <lastmod>2014-05-15T19:12:58+08:00</lastmod>
     </url>
     <url>
         <loc>http://dexterdeng.github.com/commands/</loc>
@@ -126,6 +132,6 @@
     </url>
     <url>
         <loc>http://dexterdeng.github.com/</loc>
-        <lastmod>2014-05-12T13:37:06+08:00</lastmod>
+        <lastmod>2014-05-15T19:12:58+08:00</lastmod>
     </url>
 </urlset>

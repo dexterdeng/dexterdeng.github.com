@@ -4,7 +4,7 @@
   <title><![CDATA[脑波网]]></title>
   <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2014-05-12T13:37:06+08:00</updated>
+  <updated>2014-05-15T19:24:57+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,100 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Installing the libv8 Ruby gem on Centos 5.8]]></title>
+    <link href="http://dexterdeng.github.com/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/"/>
+    <updated>2014-05-15T19:05:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8</id>
+    <content type="html"><![CDATA[<p> <a href="http://appsintheopen.com/posts/18-installing-the-libv8-ruby-gem-on-centos-5-8" title="&quot;Installing the libv8 Ruby gem on Centos 5.8">Source</a></p>
+
+<p>First, Centos 5.8 ships with gcc 4.1.4, but to compile libv8 you need 4.4. Luckily, this step is easy:</p>
+
+<pre><code>$ yum install gcc44-c++
+</code></pre>
+
+<p>Next, you need to tell the build to make use of it. The easiest thing to do here, is to export a couple of environment variables:</p>
+
+<pre><code>$ export CC=/usr/bin/gcc44
+$ export CXX=/usr/bin/g++44
+</code></pre>
+
+<p>Now if you attempt gem install libv8, you will get an error along the lines of:</p>
+
+<pre><code>$ gem install libv8
+</code></pre>
+
+<p>creating Makefile Using compiler: <code>/usr/bin/g++44</code>
+Traceback (most recent call last):</p>
+
+<pre><code>File "build/gyp/gyp", line 15, in ?
+  import gyp
+File "build/gyp/pylib/gyp/__init__.py", line 8, in ?
+  import gyp.input
+File "build/gyp/pylib/gyp/input.py", line 14, in ?
+  import gyp.common
+File "build/gyp/pylib/gyp/common.py", line 375
+  with open(source_path) as source_file:
+  ^
+SyntaxError: invalid syntax
+gmake: *** [out/Makefile.x64] Error 1
+GYP_GENERATORS=make \
+    build/gyp/gyp --generator-output="out" build/all.gyp \
+              -Ibuild/standalone.gypi --depth=. \
+              -Dv8_target_arch=x64 \
+              -S.x64 -Dhost_arch=x64
+</code></pre>
+
+<p>This is because the version of Python that is shipped with Centos is too old. Upgrading Python is not too hard, but be warned - do not under any circumstance replace the shipped Centos Python - lots of stuff depends on it, and it you replace it, lots of stuff will break.</p>
+
+<p>To install Python 2.7:</p>
+
+<pre><code>$ yum install bzip2
+$ yum install bzip2-devel
+$ wget http://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz
+$ tar -xf Python-2.7.3.tgz
+
+$ cd Python-2.7.3
+$ ./configure
+$ make
+$ make altinstall
+</code></pre>
+
+<p>The final step is very important - this stops it overwriting the default Centos Python. We are on the home straight now. To get the libv8 install to use Python 2.7 instead of Python 2.4, I thought I could create a symlink in my local directory, and then slip my local directory onto the front of my path:</p>
+
+<pre><code>$ ln -s /usr/local/bin/python2.7 python
+$ export PATH=.:$PATH
+$ python --version
+Python 2.7.3
+</code></pre>
+
+<p>However, that didn&#8217;t work. I don&#8217;t know why - maybe the Makefile explicitly references <code>/usr/bin/python</code>? What I did was move the existing Python executable out of the way, and symlink the Python 2.7 in its place:</p>
+
+<pre><code>$ mv /usr/bin/python /usr/bin/python_
+$ ln -s /usr/local/bin/python2.7 /usr/bin/python
+</code></pre>
+
+<p>Finally:</p>
+
+<pre><code>$ gem install libv8
+( about 5 minutes later)
+Building native extensions.  This could take a while...
+Successfully installed libv8-3.11.8.4
+1 gem installed
+Installing ri documentation for libv8-3.11.8.4...
+Installing RDoc documentation for libv8-3.11.8.4...
+</code></pre>
+
+<p>Now remember, to put Python back the way you found it:</p>
+
+<pre><code>$ rm /usr/bin/python
+$ mv /usr/bin/python_ /usr/bin/python
+</code></pre>
+
+<p>Job done - finally.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Setting up a new rbenv environment on centos]]></title>
@@ -255,6 +349,10 @@ rbenv whence irb             # 列出包含 irb 这个命令的版本
 <p> 安装&#8230;</p>
 
 <p> 复制/etc/init.d/nginx文件， 注意sbin和conf的配置目录。</p></li>
+<li><p>memcached</p>
+
+<p> yum -y install  memcached php-pecl-memcache
+ /sbin/chkconfig memcached on</p></li>
 </ol>
 
 
@@ -2534,36 +2632,6 @@ ccc
 </code></pre>
 
 <p>since it is private, you need to use send</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Never call save/update in before/after_save filter]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter/"/>
-    <updated>2012-11-03T17:02:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter</id>
-    <content type="html"><![CDATA[<p>Check two source code first:</p>
-
-<pre><code>def update_attribute(name, value)
-  send(name.to_s + '=', value)
-  save(false)
-end
-</code></pre>
-
-<p>and</p>
-
-<pre><code> def update_attributes(attributes)
-   self.attributes = attributes
-   save
- end
-</code></pre>
-
-<p>Check the source code, these 2 <code>update</code> methods contain <code>save</code>. in fact,
-<code>update</code>  always means <code>save</code>.  these methods can&#8217;t be in <code>after_save</code>,
-<code>before_save</code>. as  if you call <code>save</code>, <code>save</code> trigger  <code>before_save/after_save</code>,
-and <code>before_save/after_save</code> trigger <code>save</code> again. &#8230;  No ending.</p>
-
-<p>This is very important.</p>
 ]]></content>
   </entry>
   

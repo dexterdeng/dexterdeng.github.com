@@ -9,7 +9,8 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="Question: Can you explain how to use OR, AND and NOT operators in Unix grep command with some examples? Answer: In grep, we have options equivalent &hellip;">
+  <meta name="description" content="Check two source code first: def update_attribute(name, value) send(name.to_s + '=', value) save(false)
+end and def update_attributes(attributes) &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +67,63 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter/">Never Call Save/update in Before/after_save Filter</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-03T17:02:00+08:00" pubdate data-updated="true">Nov 3<span>rd</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Check two source code first:</p>
+
+<pre><code>def update_attribute(name, value)
+  send(name.to_s + '=', value)
+  save(false)
+end
+</code></pre>
+
+<p>and</p>
+
+<pre><code> def update_attributes(attributes)
+   self.attributes = attributes
+   save
+ end
+</code></pre>
+
+<p>Check the source code, these 2 <code>update</code> methods contain <code>save</code>. in fact,
+<code>update</code>  always means <code>save</code>.  these methods can&#8217;t be in <code>after_save</code>,
+<code>before_save</code>. as  if you call <code>save</code>, <code>save</code> trigger  <code>before_save/after_save</code>,
+and <code>before_save/after_save</code> trigger <code>save</code> again. &#8230;  No ending.</p>
+
+<p>This is very important.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -627,6 +685,10 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/">Installing the libv8 Ruby gem on Centos 5.8</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/05/11/setting-up-a-new-rbenv-environment-on-centos/">Setting up a new rbenv environment on centos</a>
       </li>
     
@@ -640,10 +702,6 @@ elasticsearch -f -D es.config=/usr/local/Cellar/elasticsearch/0.18.5/config/elas
     
       <li class="post">
         <a href="/blog/2013/01/19/ruby-1-dot-9-3-env/">ruby 1.9.3 env</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/18/crontab-issues-with-rvm/">crontab issues with rvm </a>
       </li>
     
   </ul>

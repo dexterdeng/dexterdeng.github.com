@@ -9,7 +9,10 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="如果你要套用其中一笔Queue 中的邮件，可以先用mailq 或postqueue 指令查询出或筛选出你要重新排Queue 的邮件ID，并使用以下指令重新排Queue： postsuper -r 7B8CE830BD 若要套用「所有」邮件，可以使用特殊的ALL 关键字： postsuper -r &hellip;">
+  <meta name="description" content="nginx装好后， 开始装php。 记住以下几点： 务必装教新php, 新版稳定版事5.3.30
+php-fpm已加入php核心，安装时注意配置 &#8211;enable-fpm
+安装时务必&#8211;with-mysql
+如果事64位，记住编译时加上 &#8211;with-libdir= &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +69,100 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/15/configure-php-plus-nginx/">Configure Php + Nginx</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-15T15:06:00+08:00" pubdate data-updated="true">Jan 15<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>nginx装好后， 开始装php。</p>
+
+<p>记住以下几点：</p>
+
+<ul>
+<li>务必装教新php, 新版稳定版事5.3.30</li>
+<li>php-fpm已加入php核心，安装时注意配置 &#8211;enable-fpm</li>
+<li>安装时务必&#8211;with-mysql</li>
+<li><p>如果事64位，记住编译时加上 &#8211;with-libdir=lib64 ,否则会出现如下问题:</p>
+
+<p>configure:60376: checking for mysql_error in -lmysqlclient
+configure:60395: gcc -o conftest -I/usr/include -g -O2  -Wl,-rpath,/usr/lib/mysql -L/usr/lib/mysql -L/usr/lib  -Wl,-rpath,/usr/kerberos/lib64 -L/usr/kerberos/lib64 -Wl,-rpath,/usr -L/usr conftest.c -lmysqlclient  -lz -lpng -lz -lcurl -lz -lrt -lresolv -lm -ldl -lnsl  -lxml2 -lz -lm -lssl -lcrypto -ldl -lz -lcurl -ldl -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err -lidn -lssl -lcrypto -lz -lxml2 -lz -lm 1>&amp;5
+/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.so when searching for -lmysqlclient
+/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.a when searching for -lmysqlclient
+/usr/bin/ld: cannot find -lmysqlclient
+collect2: ld returned 1 exit status</p></li>
+</ul>
+
+
+<h4>准备</h4>
+
+<pre><code>yum install mysql-devel
+yum install nginx
+chkconfig --levels 235 nginx on
+/etc/init.d/nginx start
+</code></pre>
+
+<h4>安装</h4>
+
+<pre><code># yum install   php-mysql php-gd php-imap php-ldap php-odbc php-pear php-xml php-xmlrpc php-magickwand php-magpierss php-mbstring php-mcrypt php-mssql php-shout php-snmp php-soap php-tidy
+#yum install php-pecl-apc
+
+
+wget http://ca1.php.net/distributions/php-5.3.20.tar.gz
+tar -xzvf php-5.3.20.tar.gz
+ ./configure --with-libdir=lib64  --with-mysql   --enable-fpm    --enable-libgcc   --with-openssl --with-zlib
+make
+make install
+
+拷贝配置文件
+
+/etc/init.d/php-fpm stop
+/etc/init.d/php-fpm start
+</code></pre>
+
+<ul>
+<li><p>Then open <code>/etc/php.ini</code> and set <code>cgi.fix_pathinfo=0</code>:</p></li>
+<li><p>you should set date.timezone in /etc/php.ini:</p>
+
+<p>[&#8230;]
+[Date]
+; Defines the default timezone used by the date functions
+; http://www.php.net/manual/en/datetime.configuration.php#ini.date.timezone
+date.timezone = &#8220;Europe/Berlin&#8221;
+[&#8230;]</p>
+
+<p>从<code>cat /etc/sysconfig/clock</code>可以查到时区</p></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1922,63 +2019,6 @@ ccc
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/11/03/never-call-save-update-attribute-update-attributes-in-after-slash-after-save-filter/">Never Call Save/update in Before/after_save Filter</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-11-03T17:02:00+08:00" pubdate data-updated="true">Nov 3<span>rd</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Check two source code first:</p>
-
-<pre><code>def update_attribute(name, value)
-  send(name.to_s + '=', value)
-  save(false)
-end
-</code></pre>
-
-<p>and</p>
-
-<pre><code> def update_attributes(attributes)
-   self.attributes = attributes
-   save
- end
-</code></pre>
-
-<p>Check the source code, these 2 <code>update</code> methods contain <code>save</code>. in fact,
-<code>update</code>  always means <code>save</code>.  these methods can&#8217;t be in <code>after_save</code>,
-<code>before_save</code>. as  if you call <code>save</code>, <code>save</code> trigger  <code>before_save/after_save</code>,
-and <code>before_save/after_save</code> trigger <code>save</code> again. &#8230;  No ending.</p>
-
-<p>This is very important.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; 更早</a>
@@ -1996,6 +2036,10 @@ and <code>before_save/after_save</code> trigger <code>save</code> again. &#8230;
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/">Installing the libv8 Ruby gem on Centos 5.8</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/05/11/setting-up-a-new-rbenv-environment-on-centos/">Setting up a new rbenv environment on centos</a>
       </li>
     
@@ -2009,10 +2053,6 @@ and <code>before_save/after_save</code> trigger <code>save</code> again. &#8230;
     
       <li class="post">
         <a href="/blog/2013/01/19/ruby-1-dot-9-3-env/">ruby 1.9.3 env</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/18/crontab-issues-with-rvm/">crontab issues with rvm </a>
       </li>
     
   </ul>

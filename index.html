@@ -9,7 +9,7 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="从零开始新部署一台服务器，把过程记下来，以后能快点。 首先， 使用uname -a确定系统是 x86_64 还是 i386. 安装Percona数据库。 1.1 删除自带mysql rpm -qa | grep mysql #列出自带mysql包。 得到以下结果: mysql-connector- &hellip;">
+  <meta name="description" content="Source First, Centos 5.8 ships with gcc 4.1.4, but to compile libv8 you need 4.4. Luckily, this step is easy: $ yum install gcc44-c++ Next, you need &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +66,127 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/">Installing the Libv8 Ruby Gem on Centos 5.8</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-15T19:05:00+08:00" pubdate data-updated="true">May 15<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p> <a href="http://appsintheopen.com/posts/18-installing-the-libv8-ruby-gem-on-centos-5-8" title="&quot;Installing the libv8 Ruby gem on Centos 5.8">Source</a></p>
+
+<p>First, Centos 5.8 ships with gcc 4.1.4, but to compile libv8 you need 4.4. Luckily, this step is easy:</p>
+
+<pre><code>$ yum install gcc44-c++
+</code></pre>
+
+<p>Next, you need to tell the build to make use of it. The easiest thing to do here, is to export a couple of environment variables:</p>
+
+<pre><code>$ export CC=/usr/bin/gcc44
+$ export CXX=/usr/bin/g++44
+</code></pre>
+
+<p>Now if you attempt gem install libv8, you will get an error along the lines of:</p>
+
+<pre><code>$ gem install libv8
+</code></pre>
+
+<p>creating Makefile Using compiler: <code>/usr/bin/g++44</code>
+Traceback (most recent call last):</p>
+
+<pre><code>File "build/gyp/gyp", line 15, in ?
+  import gyp
+File "build/gyp/pylib/gyp/__init__.py", line 8, in ?
+  import gyp.input
+File "build/gyp/pylib/gyp/input.py", line 14, in ?
+  import gyp.common
+File "build/gyp/pylib/gyp/common.py", line 375
+  with open(source_path) as source_file:
+  ^
+SyntaxError: invalid syntax
+gmake: *** [out/Makefile.x64] Error 1
+GYP_GENERATORS=make \
+    build/gyp/gyp --generator-output="out" build/all.gyp \
+              -Ibuild/standalone.gypi --depth=. \
+              -Dv8_target_arch=x64 \
+              -S.x64 -Dhost_arch=x64
+</code></pre>
+
+<p>This is because the version of Python that is shipped with Centos is too old. Upgrading Python is not too hard, but be warned - do not under any circumstance replace the shipped Centos Python - lots of stuff depends on it, and it you replace it, lots of stuff will break.</p>
+
+<p>To install Python 2.7:</p>
+
+<pre><code>$ yum install bzip2
+$ yum install bzip2-devel
+$ wget http://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz
+$ tar -xf Python-2.7.3.tgz
+
+$ cd Python-2.7.3
+$ ./configure
+$ make
+$ make altinstall
+</code></pre>
+
+<p>The final step is very important - this stops it overwriting the default Centos Python. We are on the home straight now. To get the libv8 install to use Python 2.7 instead of Python 2.4, I thought I could create a symlink in my local directory, and then slip my local directory onto the front of my path:</p>
+
+<pre><code>$ ln -s /usr/local/bin/python2.7 python
+$ export PATH=.:$PATH
+$ python --version
+Python 2.7.3
+</code></pre>
+
+<p>However, that didn&#8217;t work. I don&#8217;t know why - maybe the Makefile explicitly references <code>/usr/bin/python</code>? What I did was move the existing Python executable out of the way, and symlink the Python 2.7 in its place:</p>
+
+<pre><code>$ mv /usr/bin/python /usr/bin/python_
+$ ln -s /usr/local/bin/python2.7 /usr/bin/python
+</code></pre>
+
+<p>Finally:</p>
+
+<pre><code>$ gem install libv8
+( about 5 minutes later)
+Building native extensions.  This could take a while...
+Successfully installed libv8-3.11.8.4
+1 gem installed
+Installing ri documentation for libv8-3.11.8.4...
+Installing RDoc documentation for libv8-3.11.8.4...
+</code></pre>
+
+<p>Now remember, to put Python back the way you found it:</p>
+
+<pre><code>$ rm /usr/bin/python
+$ mv /usr/bin/python_ /usr/bin/python
+</code></pre>
+
+<p>Job done - finally.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -332,6 +453,10 @@ rbenv whence irb             # 列出包含 irb 这个命令的版本
 <p> 安装&#8230;</p>
 
 <p> 复制/etc/init.d/nginx文件， 注意sbin和conf的配置目录。</p></li>
+<li><p>memcached</p>
+
+<p> yum -y install  memcached php-pecl-memcache
+ /sbin/chkconfig memcached on</p></li>
 </ol>
 
 
@@ -1155,100 +1280,6 @@ cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/01/15/configure-php-plus-nginx/">Configure Php + Nginx</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-01-15T15:06:00+08:00" pubdate data-updated="true">Jan 15<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>nginx装好后， 开始装php。</p>
-
-<p>记住以下几点：</p>
-
-<ul>
-<li>务必装教新php, 新版稳定版事5.3.30</li>
-<li>php-fpm已加入php核心，安装时注意配置 &#8211;enable-fpm</li>
-<li>安装时务必&#8211;with-mysql</li>
-<li><p>如果事64位，记住编译时加上 &#8211;with-libdir=lib64 ,否则会出现如下问题:</p>
-
-<p>configure:60376: checking for mysql_error in -lmysqlclient
-configure:60395: gcc -o conftest -I/usr/include -g -O2  -Wl,-rpath,/usr/lib/mysql -L/usr/lib/mysql -L/usr/lib  -Wl,-rpath,/usr/kerberos/lib64 -L/usr/kerberos/lib64 -Wl,-rpath,/usr -L/usr conftest.c -lmysqlclient  -lz -lpng -lz -lcurl -lz -lrt -lresolv -lm -ldl -lnsl  -lxml2 -lz -lm -lssl -lcrypto -ldl -lz -lcurl -ldl -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err -lidn -lssl -lcrypto -lz -lxml2 -lz -lm 1>&amp;5
-/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.so when searching for -lmysqlclient
-/usr/bin/ld: skipping incompatible /usr/lib/mysql/libmysqlclient.a when searching for -lmysqlclient
-/usr/bin/ld: cannot find -lmysqlclient
-collect2: ld returned 1 exit status</p></li>
-</ul>
-
-
-<h4>准备</h4>
-
-<pre><code>yum install mysql-devel
-yum install nginx
-chkconfig --levels 235 nginx on
-/etc/init.d/nginx start
-</code></pre>
-
-<h4>安装</h4>
-
-<pre><code># yum install   php-mysql php-gd php-imap php-ldap php-odbc php-pear php-xml php-xmlrpc php-magickwand php-magpierss php-mbstring php-mcrypt php-mssql php-shout php-snmp php-soap php-tidy
-#yum install php-pecl-apc
-
-
-wget http://ca1.php.net/distributions/php-5.3.20.tar.gz
-tar -xzvf php-5.3.20.tar.gz
- ./configure --with-libdir=lib64  --with-mysql   --enable-fpm    --enable-libgcc   --with-openssl --with-zlib
-make
-make install
-
-拷贝配置文件
-
-/etc/init.d/php-fpm stop
-/etc/init.d/php-fpm start
-</code></pre>
-
-<ul>
-<li><p>Then open <code>/etc/php.ini</code> and set <code>cgi.fix_pathinfo=0</code>:</p></li>
-<li><p>you should set date.timezone in /etc/php.ini:</p>
-
-<p>[&#8230;]
-[Date]
-; Defines the default timezone used by the date functions
-; http://www.php.net/manual/en/datetime.configuration.php#ini.date.timezone
-date.timezone = &#8220;Europe/Berlin&#8221;
-[&#8230;]</p>
-
-<p>从<code>cat /etc/sysconfig/clock</code>可以查到时区</p></li>
-</ul>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; 更早</a>
@@ -1264,6 +1295,10 @@ date.timezone = &#8220;Europe/Berlin&#8221;
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/">Installing the libv8 Ruby gem on Centos 5.8</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/05/11/setting-up-a-new-rbenv-environment-on-centos/">Setting up a new rbenv environment on centos</a>
       </li>
     
@@ -1277,10 +1312,6 @@ date.timezone = &#8220;Europe/Berlin&#8221;
     
       <li class="post">
         <a href="/blog/2013/01/19/ruby-1-dot-9-3-env/">ruby 1.9.3 env</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/18/crontab-issues-with-rvm/">crontab issues with rvm </a>
       </li>
     
   </ul>

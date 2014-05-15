@@ -5,12 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>install hudson - 脑波网</title>
+  <title>Installing the libv8 Ruby gem on Centos 5.8 - 脑波网</title>
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="亲信官方文档， 导致错误 官方这么说： http://wiki.hudson-ci.org/display/HUDSON/Installing+Hudson+using+RPM+repository Installation
-sudo wget -O /etc/yum.repos.d/hudson &hellip;">
+  <meta name="description" content="Source First, Centos 5.8 ships with gcc 4.1.4, but to compile libv8 you need 4.4. Luckily, this step is easy: $ yum install gcc44-c++ Next, you need &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +18,7 @@ sudo wget -O /etc/yum.repos.d/hudson &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://dexterdeng.github.com/blog/2013/01/16/install-hudson/">
+  <link rel="canonical" href="http://dexterdeng.github.com/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -70,7 +69,7 @@ sudo wget -O /etc/yum.repos.d/hudson &hellip;">
   
   <header>
     
-      <h1 class="entry-title">Install Hudson</h1>
+      <h1 class="entry-title">Installing the Libv8 Ruby Gem on Centos 5.8</h1>
     
     
       <p class="meta">
@@ -86,74 +85,99 @@ sudo wget -O /etc/yum.repos.d/hudson &hellip;">
   
 
 
-<time datetime="2013-01-16T16:58:00+08:00" pubdate data-updated="true">Jan 16<span>th</span>, 2013</time>
+<time datetime="2014-05-15T19:05:00+08:00" pubdate data-updated="true">May 15<span>th</span>, 2014</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><h4>亲信官方文档， 导致错误</h4>
+<div class="entry-content"><p> <a href="http://appsintheopen.com/posts/18-installing-the-libv8-ruby-gem-on-centos-5-8" title="&quot;Installing the libv8 Ruby gem on Centos 5.8">Source</a></p>
 
-<p>官方这么说： http://wiki.hudson-ci.org/display/HUDSON/Installing+Hudson+using+RPM+repository</p>
+<p>First, Centos 5.8 ships with gcc 4.1.4, but to compile libv8 you need 4.4. Luckily, this step is easy:</p>
 
-<pre><code>Installation
-sudo wget -O /etc/yum.repos.d/hudson.repo http://hudson-ci.org/redhat/hudson.repo
-sudo yum check-update
-sudo yum install hudson
+<pre><code>$ yum install gcc44-c++
 </code></pre>
 
-<p>错！</p>
+<p>Next, you need to tell the build to make use of it. The easiest thing to do here, is to export a couple of environment variables:</p>
 
-<p>第一行命令执行完， 得到一下结果：</p>
-
-<pre><code>Loaded plugins: fastestmirror, security
-Loading mirror speeds from cached hostfile
- * base: dist1.800hosting.com
- * epel: mirrors.servercentral.net
- * extras: mirror.rackspace.com
- * rpmforge: mirror.teklinks.com
- * updates: mirror.raystedman.net
-hudson/primary_db                                                                                                                                           | 5.0 kB     00:00     
-http://hudson-ci.org/redhat/repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2: [Errno -3] Error performing checksum
-Trying other mirror.
-Error: failure: repodata/f6063d9778b5261845bb4845b277fe48b0a24b657c9cd21e7fc37f017642bb5b-primary.sqlite.bz2 from hudson: [Errno 256] No more mirrors to try.
+<pre><code>$ export CC=/usr/bin/gcc44
+$ export CXX=/usr/bin/g++44
 </code></pre>
 
-<p>无论执行何yum命令，都会出现这个结果。</p>
+<p>Now if you attempt gem install libv8, you will get an error along the lines of:</p>
 
-<p>解决：</p>
-
-<pre><code>rm /etc/yum.repos.d/hudson.repo
+<pre><code>$ gem install libv8
 </code></pre>
 
-<p>删掉yum.repos.d里hudson记录即可</p>
+<p>creating Makefile Using compiler: <code>/usr/bin/g++44</code>
+Traceback (most recent call last):</p>
 
-<h3>继续，重新开始</h3>
-
-<h4>安装JDK</h4>
-
-<pre><code>yum search java #找到最新，java
-
-yum install java-1.6.0-openjdk.x86_64 java-1.6.0-openjdk-devel.x86_64
+<pre><code>File "build/gyp/gyp", line 15, in ?
+  import gyp
+File "build/gyp/pylib/gyp/__init__.py", line 8, in ?
+  import gyp.input
+File "build/gyp/pylib/gyp/input.py", line 14, in ?
+  import gyp.common
+File "build/gyp/pylib/gyp/common.py", line 375
+  with open(source_path) as source_file:
+  ^
+SyntaxError: invalid syntax
+gmake: *** [out/Makefile.x64] Error 1
+GYP_GENERATORS=make \
+    build/gyp/gyp --generator-output="out" build/all.gyp \
+              -Ibuild/standalone.gypi --depth=. \
+              -Dv8_target_arch=x64 \
+              -S.x64 -Dhost_arch=x64
 </code></pre>
 
-<h4>安装hudson</h4>
+<p>This is because the version of Python that is shipped with Centos is too old. Upgrading Python is not too hard, but be warned - do not under any circumstance replace the shipped Centos Python - lots of stuff depends on it, and it you replace it, lots of stuff will break.</p>
 
-<pre><code>找到http://hudson-ci.org/redhat/RPMS/noarch/ 最新hudson rpm 按住包
+<p>To install Python 2.7:</p>
 
-wget http://hudson-ci.org/redhat/RPMS/noarch/hudson-3.0.0-1.1.noarch.rpm
+<pre><code>$ yum install bzip2
+$ yum install bzip2-devel
+$ wget http://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz
+$ tar -xf Python-2.7.3.tgz
+
+$ cd Python-2.7.3
+$ ./configure
+$ make
+$ make altinstall
 </code></pre>
 
-<p>配置：安装完之后，你可以在/etc/sysconfig/hudson设置启动用户（涉及到执行构建的权限），hudson主目录。</p>
+<p>The final step is very important - this stops it overwriting the default Centos Python. We are on the home straight now. To get the libv8 install to use Python 2.7 instead of Python 2.4, I thought I could create a symlink in my local directory, and then slip my local directory onto the front of my path:</p>
 
-<h4>启动hudson</h4>
-
-<pre><code>/sbin/service hudson start
+<pre><code>$ ln -s /usr/local/bin/python2.7 python
+$ export PATH=.:$PATH
+$ python --version
+Python 2.7.3
 </code></pre>
 
-<p>open http://66.135.35.84:8080/
-choose plugins to install and click <code>instann</code></p>
+<p>However, that didn&#8217;t work. I don&#8217;t know why - maybe the Makefile explicitly references <code>/usr/bin/python</code>? What I did was move the existing Python executable out of the way, and symlink the Python 2.7 in its place:</p>
+
+<pre><code>$ mv /usr/bin/python /usr/bin/python_
+$ ln -s /usr/local/bin/python2.7 /usr/bin/python
+</code></pre>
+
+<p>Finally:</p>
+
+<pre><code>$ gem install libv8
+( about 5 minutes later)
+Building native extensions.  This could take a while...
+Successfully installed libv8-3.11.8.4
+1 gem installed
+Installing ri documentation for libv8-3.11.8.4...
+Installing RDoc documentation for libv8-3.11.8.4...
+</code></pre>
+
+<p>Now remember, to put Python back the way you found it:</p>
+
+<pre><code>$ rm /usr/bin/python
+$ mv /usr/bin/python_ /usr/bin/python
+</code></pre>
+
+<p>Job done - finally.</p>
 </div>
 
 
@@ -176,12 +200,12 @@ choose plugins to install and click <code>instann</code></p>
   
 
 
-<time datetime="2013-01-16T16:58:00+08:00" pubdate data-updated="true">Jan 16<span>th</span>, 2013</time>
+<time datetime="2014-05-15T19:05:00+08:00" pubdate data-updated="true">May 15<span>th</span>, 2014</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/linux/'>linux</a>
+    <a class='category' href='/blog/categories/linux/'>linux</a>, <a class='category' href='/blog/categories/rails/'>rails</a>
   
 </span>
 
@@ -190,7 +214,7 @@ choose plugins to install and click <code>instann</code></p>
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2013/01/16/install-hudson/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2013/01/16/install-hudson/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://dexterdeng.github.com/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/" data-via="dexterdeng" data-counturl="http://dexterdeng.github.com/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/" >Tweet</a>
   
   
   <div class="g-plusone" data-size="medium"></div>
@@ -203,10 +227,8 @@ choose plugins to install and click <code>instann</code></p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/01/16/wang-zhan-gong-ji-shi-li/" title="Previous Post: 网站攻击实例">&laquo; 网站攻击实例</a>
+        <a class="basic-alignment left" href="/blog/2014/05/11/setting-up-a-new-rbenv-environment-on-centos/" title="Previous Post: Setting up a new rbenv environment on centos">&laquo; Setting up a new rbenv environment on centos</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/01/18/crontab-issues-with-rvm/" title="Next Post: crontab issues with rvm ">crontab issues with rvm  &raquo;</a>
       
     </p>
   </footer>
@@ -298,8 +320,8 @@ choose plugins to install and click <code>instann</code></p>
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://dexterdeng.github.com/blog/2013/01/16/install-hudson/';
-        var disqus_url = 'http://dexterdeng.github.com/blog/2013/01/16/install-hudson/';
+        var disqus_identifier = 'http://dexterdeng.github.com/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/';
+        var disqus_url = 'http://dexterdeng.github.com/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/';
         var disqus_script = 'embed.js';
       
     (function () {

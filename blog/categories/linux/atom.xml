@@ -4,7 +4,7 @@
   <title><![CDATA[Category: linux | 脑波网]]></title>
   <link href="http://dexterdeng.github.com/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2014-05-12T13:37:06+08:00</updated>
+  <updated>2014-05-15T19:24:57+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,100 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Installing the libv8 Ruby gem on Centos 5.8]]></title>
+    <link href="http://dexterdeng.github.com/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/"/>
+    <updated>2014-05-15T19:05:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8</id>
+    <content type="html"><![CDATA[<p> <a href="http://appsintheopen.com/posts/18-installing-the-libv8-ruby-gem-on-centos-5-8" title="&quot;Installing the libv8 Ruby gem on Centos 5.8">Source</a></p>
+
+<p>First, Centos 5.8 ships with gcc 4.1.4, but to compile libv8 you need 4.4. Luckily, this step is easy:</p>
+
+<pre><code>$ yum install gcc44-c++
+</code></pre>
+
+<p>Next, you need to tell the build to make use of it. The easiest thing to do here, is to export a couple of environment variables:</p>
+
+<pre><code>$ export CC=/usr/bin/gcc44
+$ export CXX=/usr/bin/g++44
+</code></pre>
+
+<p>Now if you attempt gem install libv8, you will get an error along the lines of:</p>
+
+<pre><code>$ gem install libv8
+</code></pre>
+
+<p>creating Makefile Using compiler: <code>/usr/bin/g++44</code>
+Traceback (most recent call last):</p>
+
+<pre><code>File "build/gyp/gyp", line 15, in ?
+  import gyp
+File "build/gyp/pylib/gyp/__init__.py", line 8, in ?
+  import gyp.input
+File "build/gyp/pylib/gyp/input.py", line 14, in ?
+  import gyp.common
+File "build/gyp/pylib/gyp/common.py", line 375
+  with open(source_path) as source_file:
+  ^
+SyntaxError: invalid syntax
+gmake: *** [out/Makefile.x64] Error 1
+GYP_GENERATORS=make \
+    build/gyp/gyp --generator-output="out" build/all.gyp \
+              -Ibuild/standalone.gypi --depth=. \
+              -Dv8_target_arch=x64 \
+              -S.x64 -Dhost_arch=x64
+</code></pre>
+
+<p>This is because the version of Python that is shipped with Centos is too old. Upgrading Python is not too hard, but be warned - do not under any circumstance replace the shipped Centos Python - lots of stuff depends on it, and it you replace it, lots of stuff will break.</p>
+
+<p>To install Python 2.7:</p>
+
+<pre><code>$ yum install bzip2
+$ yum install bzip2-devel
+$ wget http://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz
+$ tar -xf Python-2.7.3.tgz
+
+$ cd Python-2.7.3
+$ ./configure
+$ make
+$ make altinstall
+</code></pre>
+
+<p>The final step is very important - this stops it overwriting the default Centos Python. We are on the home straight now. To get the libv8 install to use Python 2.7 instead of Python 2.4, I thought I could create a symlink in my local directory, and then slip my local directory onto the front of my path:</p>
+
+<pre><code>$ ln -s /usr/local/bin/python2.7 python
+$ export PATH=.:$PATH
+$ python --version
+Python 2.7.3
+</code></pre>
+
+<p>However, that didn't work. I don't know why - maybe the Makefile explicitly references <code>/usr/bin/python</code>? What I did was move the existing Python executable out of the way, and symlink the Python 2.7 in its place:</p>
+
+<pre><code>$ mv /usr/bin/python /usr/bin/python_
+$ ln -s /usr/local/bin/python2.7 /usr/bin/python
+</code></pre>
+
+<p>Finally:</p>
+
+<pre><code>$ gem install libv8
+( about 5 minutes later)
+Building native extensions.  This could take a while...
+Successfully installed libv8-3.11.8.4
+1 gem installed
+Installing ri documentation for libv8-3.11.8.4...
+Installing RDoc documentation for libv8-3.11.8.4...
+</code></pre>
+
+<p>Now remember, to put Python back the way you found it:</p>
+
+<pre><code>$ rm /usr/bin/python
+$ mv /usr/bin/python_ /usr/bin/python
+</code></pre>
+
+<p>Job done - finally.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Setting up a new rbenv environment on centos]]></title>
@@ -255,6 +349,10 @@ rbenv whence irb             # 列出包含 irb 这个命令的版本
 <p> 安装...</p>
 
 <p> 复制/etc/init.d/nginx文件， 注意sbin和conf的配置目录。</p></li>
+<li><p>memcached</p>
+
+<p> yum -y install  memcached php-pecl-memcache
+ /sbin/chkconfig memcached on</p></li>
 </ol>
 
 
@@ -638,94 +736,6 @@ git checkout v0.6
 ./configure
 make
 make install
-</code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[crontab issues with rvm ]]></title>
-    <link href="http://dexterdeng.github.com/blog/2013/01/18/crontab-issues-with-rvm/"/>
-    <updated>2013-01-18T17:45:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2013/01/18/crontab-issues-with-rvm</id>
-    <content type="html"><![CDATA[<p>I encountered these issues today.</p>
-
-<ol>
-<li>I can't set default rvm to different users. like hudson and nginx.</li>
-</ol>
-
-
-<p>solution:</p>
-
-<pre><code>PATH=/usr/kerberos/sbin:/usr/local/rvm/gems/ree-1.8.7-2011.03/bin:/usr/local/rvm/gems/ree-1.8.7-2011.03@global/bin:/usr/local/rvm/rubies/ree-1.8.7-2011.03/bin:/usr/local/rvm/bin:/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin:/home/blabla/bin
-[[ -s "/usr/local/rvm/scripts/rvm" ]] &amp;&amp; . "/usr/local/rvm/scripts/rvm" # Load RVM function
-rvm ree-1.8.7-2011.03 --default
-</code></pre>
-
-<ol>
-<li><p>after I did #1, I encountered another issue. nginx user can't run
-crontab -l or crontab -l. it spotted  something like that:</p>
-
-<p> user (nginx) are not allowed to access to (crontab) because of pam configuration</p></li>
-</ol>
-
-
-<p>solution:</p>
-
-<pre><code>#
-# The PAM configuration file for the cron daemon
-#
-#
-#auth      sufficient pam_env.so          # Comment that line
-#auth       required   pam_rootok.so    # Comment that line
-
-auth       sufficient pam_rootok.so       # Add that line
-auth       required   pam_env.so        # Add that line
-
-auth       include    system-auth
-account    required   pam_access.so
-account    include    system-auth
-session    required   pam_loginuid.so
-session    include    system-auth
-</code></pre>
-
-<p>   and then, I can run crontab -e now.</p>
-
-<ol>
-<li>nginx can't use rvm stuff.</li>
-</ol>
-
-
-<p>solution.</p>
-
-<pre><code>/usr/local/rvm/bin/rake-ree-1.8.7-2011.03 can run the rake tasks directly
-</code></pre>
-
-<p>  I added a task to edit crontab  , replace <code>/usr/bin/env ruby</code> with <code>/usr/local/rvm/bin/rake-ree-1.8.7-2011.03</code></p>
-
-<pre><code>desc "correct crontab "
-task :cron =&gt; :environment do
-  oc = `crontab -l`
-  #nrake = "/Users/mac/.rbenv/shims/rake"
-  nrake = "/usr/local/rvm/bin/rake-ree-1.8.7-2011.03"
-  oc = oc.split("\n").map{|l|
-    l.gsub("/usr/bin/env rake", nrake)
-  }
-  cf = File.new("#{RAILS_ROOT}/tmp/nc.txt", "w")
-  cf.puts oc.join("\n")
-  cf.close
-
-  `crontab &lt; #{RAILS_ROOT}/tmp/nc.txt`
-end
-</code></pre>
-
-<p>  and then , I add this to deploy script.</p>
-
-<pre><code>namespace :deploy do
-desc "Update the crontab file"
-  task :update_crontab, :roles =&gt; :db do
-    run "cd #{release_path} &amp;&amp; whenever --update-crontab #{application} &amp;&amp; rake sys:cron RAILS_ENV=production"
-  end
-end 
 </code></pre>
 ]]></content>
   </entry>
