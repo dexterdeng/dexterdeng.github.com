@@ -4,7 +4,7 @@
   <title><![CDATA[脑波网]]></title>
   <link href="http://dexterdeng.github.com/atom.xml" rel="self"/>
   <link href="http://dexterdeng.github.com/"/>
-  <updated>2014-05-15T19:24:57+08:00</updated>
+  <updated>2014-05-25T11:27:40+08:00</updated>
   <id>http://dexterdeng.github.com/</id>
   <author>
     <name><![CDATA[Dexter Deng]]></name>
@@ -12,6 +12,151 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Easy way to build nested form with simple_form and concoon]]></title>
+    <link href="http://dexterdeng.github.com/blog/2014/05/25/easy-way-to-build-simple-form-with-concoon/"/>
+    <updated>2014-05-25T10:21:00+08:00</updated>
+    <id>http://dexterdeng.github.com/blog/2014/05/25/easy-way-to-build-simple-form-with-concoon</id>
+    <content type="html"><![CDATA[<p>Here is the way to build nested form with <code>simple_form</code> and <code>concoon</code> faster.</p>
+
+<p>First, add gems to Gemfile</p>
+
+<pre><code>gem "simple_form"
+gem "cocoon"
+</code></pre>
+
+<h4>Models</h4>
+
+<p>Let&#8217;s say we have two modals, <code>Business</code> and <code>Review</code>,</p>
+
+<pre><code>class Business &lt; ActiveRecord::Base
+
+  has_many   :reviews, :dependent =&gt; :destroy
+  accepts_nested_attributes_for :reviews,  :allow_destroy =&gt; true,  :reject_if =&gt; :all_blank  
+  #allow_destroy will let the concoon delete a nested review easily. 
+  #reject_if =&gt; :all_blank will let business ignore the review which is blank
+
+  validates_presence_of :name, :contact_id
+
+end
+
+class PaymentPlanItem &lt; ActiveRecord::Base
+
+  belongs_to :business
+  validates_presence_of :name, :content
+
+end 
+</code></pre>
+
+<h4>Views</h4>
+
+<p>Here is the codes for the wrapper form:  <code>businesses/_form.html.haml</code>.</p>
+
+<pre><code>= simple_form_for(@business, :wrapper=&gt; :horizontal, :remote=&gt;true,
+                  :defaults=&gt;{ input_html: { class: 'col-xs-8 col-sm-6' },
+                  label_html: { class: 'col-sm-2 control-label no-padding-right' }},
+                  :html=&gt;{:class=&gt;"form-horizontal", :role=&gt;"form"}) do |f|
+  = f.error_notification
+
+  = f.input :name, :label =&gt; "Business Name"
+
+  .reviews-div
+    %table.table.table-striped.table-bordered.table-hover
+      %tr
+        %th name
+        %th content
+        %th
+      = f.simple_fields_for :reviews do |sf|
+        = render 'reviews_fields', :f =&gt; sf
+
+    = link_to_add_association 'New Review', f, :reviews,  'data-association-insertion-node' =&gt; ".reviews-div table", 'data-association-insertion-method' =&gt; 'append', :class =&gt; "add_field_link"
+
+  .form-actions
+    = f.button :submit, {:class=&gt;"btn btn-primary"}
+
+:javascript
+  $(".reviews-div table").on('cocoon:after-insert', function(){
+    #add something after add a new review item. 
+  });
+</code></pre>
+
+<p><code>link_to_add_association</code> is cocoon&#8217;s method. it render a new template: <code>businesses/_reviews_fields.html.haml</code>, and keep it in data attribute. and when click that link, it will add blank node to the position you specified.   <code>data-association-insertion-node</code> means where to add. <code>data-association-insertion-method</code> means how to add,  it can be  <code>before</code>, <code>after</code>, <code>append</code>, <code>prepend</code>, etc.</p>
+
+<p>and create <code>businesses/_reviews_fields.html.haml</code> to render the nested
+reviews.</p>
+
+<pre><code>#app/views/businesses/_reviews_fields.html.haml
+%tr.nested-tr
+ %td= f.input :name, :label =&gt; false
+ %td= f.input :content, :label =&gt; false, :input_html=&gt;{:style=&gt;"width:200px;"}
+ %td
+   = link_to_remove_association  f, "data-wrapper-class" =&gt; "nested-tr" do
+     = image_tag '32/delete.png', :width =&gt; 18
+</code></pre>
+
+<p><code>link_to_remove_association</code> is cocoon&#8217;s method. and with that link.  removed record will be destroyed from db too.</p>
+
+<p>Just notice the <code>data-wrapper-class</code>, if you read the <code>cocoon</code>&#8217;s code, you&#8217;ll see why we need  <code>data-wrapper-class</code>, <code>data-wrapper-class</code> means when click that link, which closest node to remove.</p>
+
+<h4>Controllers</h4>
+
+<pre><code>class PaymentPlansController &lt; ApplicationController
+
+  before_filter :authenticate_user!
+
+  def new
+    @business = current_user.businesses.build
+    @business.reviews.build 
+    render :layout =&gt; nil
+  end
+
+
+   def create
+     @business = current_user.businesses.build business_params
+     respond_to do |format|
+       if business.save
+         format.js 
+       else
+         format.html { render action: 'new', :layout =&gt; nil }
+         format.json { render json: @business.errors, status: :unprocessable_entity }
+       end
+     end
+   end
+
+  private
+
+  def business_params
+    params.require(:business).permit(:name, :blabla,  :reviews_attributes =&gt; [:id, :name, :content, :_destroy])
+    # create and destroy.
+  end
+
+end
+</code></pre>
+
+<p>In <code>new</code> method,  if you want to create 3 rows of reviews. just do
+something like that.</p>
+
+<pre><code>3.times {
+   @business.reviews.build 
+}
+</code></pre>
+
+<p>In <code>create</code> method, no need to care more about the review details.</p>
+
+<h5>Important:</h5>
+
+<pre><code>def business_params
+  params.require(:business).permit(:name, :blabla,  :reviews_attributes =&gt; [:id, :name, :content, :_destroy])
+  # create and destroy.
+end
+</code></pre>
+
+<p><code>reviews_attributes</code> is for claiming which attributes allowed in
+reviews. and :_destroy is to allow destroy nested review when it&#8217;s
+removed from the frontend.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Installing the libv8 Ruby gem on Centos 5.8]]></title>
@@ -2608,30 +2753,6 @@ ccc
 
 <pre><code>:%g/^\s*$/d
 </code></pre>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[skip vadation or skip flilter]]></title>
-    <link href="http://dexterdeng.github.com/blog/2012/11/03/skip-vadation-or-skip-flilter/"/>
-    <updated>2012-11-03T17:09:00+08:00</updated>
-    <id>http://dexterdeng.github.com/blog/2012/11/03/skip-vadation-or-skip-flilter</id>
-    <content type="html"><![CDATA[<h3>run all validation and filters</h3>
-
-<pre><code>@user.save
-</code></pre>
-
-<h3>run  no validation but all filters</h3>
-
-<pre><code>@user.save(false)
-</code></pre>
-
-<h3>run  no validation and no filters</h3>
-
-<pre><code>@user.send(:update_without_callbacks)
-</code></pre>
-
-<p>since it is private, you need to use send</p>
 ]]></content>
   </entry>
   

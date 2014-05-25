@@ -9,10 +9,11 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="nginx装好后， 开始装php。 记住以下几点： 务必装教新php, 新版稳定版事5.3.30
-php-fpm已加入php核心，安装时注意配置 &#8211;enable-fpm
-安装时务必&#8211;with-mysql
-如果事64位，记住编译时加上 &#8211;with-libdir= &hellip;">
+  <meta name="description" content="rpm -ivh gsk*
+rpm -ivh TIVsm-* tsm-6.2.2.6-P1MH8.x86_64.rpm
+yum install compat-libstdc++-33
+rpm -ivh TIVsm-* tsm-6.2.2.6-P1MH8.x86_64.rpm
+/opt/tivoli &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -69,6 +70,58 @@ php-fpm已加入php核心，安装时注意配置 &#8211;enable-fpm
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/01/15/install-tivoli/">Install Tivoli</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-01-15T15:21:00+08:00" pubdate data-updated="true">Jan 15<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><pre><code>rpm -ivh gsk*
+rpm -ivh TIVsm-* tsm-6.2.2.6-P1MH8.x86_64.rpm
+yum install compat-libstdc++-33
+rpm -ivh TIVsm-* tsm-6.2.2.6-P1MH8.x86_64.rpm
+/opt/tivoli/tsm/client/ba/bin/dsmconf
+dsmc
+/etc/rc.d/init.d/dsmcad restart
+/etc/rc.d/init.d/dsmc restart
+ps aux | grep dsmc
+cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
+/etc/rc.d/init.d/dsmcad restart
+/etc/rc.d/init.d/dsmc restart
+ps aux | grep dsmc
+cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
+cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
+cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
+</code></pre>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1968,57 +2021,6 @@ ccc
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/11/03/skip-vadation-or-skip-flilter/">Skip Vadation or Skip Flilter</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-11-03T17:09:00+08:00" pubdate data-updated="true">Nov 3<span>rd</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h3>run all validation and filters</h3>
-
-<pre><code>@user.save
-</code></pre>
-
-<h3>run  no validation but all filters</h3>
-
-<pre><code>@user.save(false)
-</code></pre>
-
-<h3>run  no validation and no filters</h3>
-
-<pre><code>@user.send(:update_without_callbacks)
-</code></pre>
-
-<p>since it is private, you need to use send</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/3/">&larr; 更早</a>
@@ -2036,6 +2038,10 @@ ccc
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/05/25/easy-way-to-build-simple-form-with-concoon/">Easy way to build nested form with simple_form and concoon</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/">Installing the libv8 Ruby gem on Centos 5.8</a>
       </li>
     
@@ -2049,10 +2055,6 @@ ccc
     
       <li class="post">
         <a href="/blog/2013/02/05/server-issues-fixing/">server issues fixing</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/19/ruby-1-dot-9-3-env/">ruby 1.9.3 env</a>
       </li>
     
   </ul>

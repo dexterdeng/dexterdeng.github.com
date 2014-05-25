@@ -9,7 +9,8 @@
   <meta name="author" content="Dexter Deng">
 
   
-  <meta name="description" content="Source First, Centos 5.8 ships with gcc 4.1.4, but to compile libv8 you need 4.4. Luckily, this step is easy: $ yum install gcc44-c++ Next, you need &hellip;">
+  <meta name="description" content="Here is the way to build nested form with simple_form and concoon faster. First, add gems to Gemfile gem "simple_form"
+gem "cocoon" Models Let&#8217; &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +67,178 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/05/25/easy-way-to-build-simple-form-with-concoon/">Easy Way to Build Nested Form With Simple_form and Concoon</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-25T10:21:00+08:00" pubdate data-updated="true">May 25<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Here is the way to build nested form with <code>simple_form</code> and <code>concoon</code> faster.</p>
+
+<p>First, add gems to Gemfile</p>
+
+<pre><code>gem "simple_form"
+gem "cocoon"
+</code></pre>
+
+<h4>Models</h4>
+
+<p>Let&#8217;s say we have two modals, <code>Business</code> and <code>Review</code>,</p>
+
+<pre><code>class Business &lt; ActiveRecord::Base
+
+  has_many   :reviews, :dependent =&gt; :destroy
+  accepts_nested_attributes_for :reviews,  :allow_destroy =&gt; true,  :reject_if =&gt; :all_blank  
+  #allow_destroy will let the concoon delete a nested review easily. 
+  #reject_if =&gt; :all_blank will let business ignore the review which is blank
+
+  validates_presence_of :name, :contact_id
+
+end
+
+class PaymentPlanItem &lt; ActiveRecord::Base
+
+  belongs_to :business
+  validates_presence_of :name, :content
+
+end 
+</code></pre>
+
+<h4>Views</h4>
+
+<p>Here is the codes for the wrapper form:  <code>businesses/_form.html.haml</code>.</p>
+
+<pre><code>= simple_form_for(@business, :wrapper=&gt; :horizontal, :remote=&gt;true,
+                  :defaults=&gt;{ input_html: { class: 'col-xs-8 col-sm-6' },
+                  label_html: { class: 'col-sm-2 control-label no-padding-right' }},
+                  :html=&gt;{:class=&gt;"form-horizontal", :role=&gt;"form"}) do |f|
+  = f.error_notification
+
+  = f.input :name, :label =&gt; "Business Name"
+
+  .reviews-div
+    %table.table.table-striped.table-bordered.table-hover
+      %tr
+        %th name
+        %th content
+        %th
+      = f.simple_fields_for :reviews do |sf|
+        = render 'reviews_fields', :f =&gt; sf
+
+    = link_to_add_association 'New Review', f, :reviews,  'data-association-insertion-node' =&gt; ".reviews-div table", 'data-association-insertion-method' =&gt; 'append', :class =&gt; "add_field_link"
+
+  .form-actions
+    = f.button :submit, {:class=&gt;"btn btn-primary"}
+
+:javascript
+  $(".reviews-div table").on('cocoon:after-insert', function(){
+    #add something after add a new review item. 
+  });
+</code></pre>
+
+<p><code>link_to_add_association</code> is cocoon&#8217;s method. it render a new template: <code>businesses/_reviews_fields.html.haml</code>, and keep it in data attribute. and when click that link, it will add blank node to the position you specified.   <code>data-association-insertion-node</code> means where to add. <code>data-association-insertion-method</code> means how to add,  it can be  <code>before</code>, <code>after</code>, <code>append</code>, <code>prepend</code>, etc.</p>
+
+<p>and create <code>businesses/_reviews_fields.html.haml</code> to render the nested
+reviews.</p>
+
+<pre><code>#app/views/businesses/_reviews_fields.html.haml
+%tr.nested-tr
+ %td= f.input :name, :label =&gt; false
+ %td= f.input :content, :label =&gt; false, :input_html=&gt;{:style=&gt;"width:200px;"}
+ %td
+   = link_to_remove_association  f, "data-wrapper-class" =&gt; "nested-tr" do
+     = image_tag '32/delete.png', :width =&gt; 18
+</code></pre>
+
+<p><code>link_to_remove_association</code> is cocoon&#8217;s method. and with that link.  removed record will be destroyed from db too.</p>
+
+<p>Just notice the <code>data-wrapper-class</code>, if you read the <code>cocoon</code>&#8217;s code, you&#8217;ll see why we need  <code>data-wrapper-class</code>, <code>data-wrapper-class</code> means when click that link, which closest node to remove.</p>
+
+<h4>Controllers</h4>
+
+<pre><code>class PaymentPlansController &lt; ApplicationController
+
+  before_filter :authenticate_user!
+
+  def new
+    @business = current_user.businesses.build
+    @business.reviews.build 
+    render :layout =&gt; nil
+  end
+
+
+   def create
+     @business = current_user.businesses.build business_params
+     respond_to do |format|
+       if business.save
+         format.js 
+       else
+         format.html { render action: 'new', :layout =&gt; nil }
+         format.json { render json: @business.errors, status: :unprocessable_entity }
+       end
+     end
+   end
+
+  private
+
+  def business_params
+    params.require(:business).permit(:name, :blabla,  :reviews_attributes =&gt; [:id, :name, :content, :_destroy])
+    # create and destroy.
+  end
+
+end
+</code></pre>
+
+<p>In <code>new</code> method,  if you want to create 3 rows of reviews. just do
+something like that.</p>
+
+<pre><code>3.times {
+   @business.reviews.build 
+}
+</code></pre>
+
+<p>In <code>create</code> method, no need to care more about the review details.</p>
+
+<h5>Important:</h5>
+
+<pre><code>def business_params
+  params.require(:business).permit(:name, :blabla,  :reviews_attributes =&gt; [:id, :name, :content, :_destroy])
+  # create and destroy.
+end
+</code></pre>
+
+<p><code>reviews_attributes</code> is for claiming which attributes allowed in
+reviews. and :_destroy is to allow destroy nested review when it&#8217;s
+removed from the frontend.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1228,58 +1401,6 @@ Paperclip.options[:swallow_stderr] = false</p></li>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/01/15/install-tivoli/">Install Tivoli</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-01-15T15:21:00+08:00" pubdate data-updated="true">Jan 15<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><pre><code>rpm -ivh gsk*
-rpm -ivh TIVsm-* tsm-6.2.2.6-P1MH8.x86_64.rpm
-yum install compat-libstdc++-33
-rpm -ivh TIVsm-* tsm-6.2.2.6-P1MH8.x86_64.rpm
-/opt/tivoli/tsm/client/ba/bin/dsmconf
-dsmc
-/etc/rc.d/init.d/dsmcad restart
-/etc/rc.d/init.d/dsmc restart
-ps aux | grep dsmc
-cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
-/etc/rc.d/init.d/dsmcad restart
-/etc/rc.d/init.d/dsmc restart
-ps aux | grep dsmc
-cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
-cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
-cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
-</code></pre>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; 更早</a>
@@ -1295,6 +1416,10 @@ cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/05/25/easy-way-to-build-simple-form-with-concoon/">Easy way to build nested form with simple_form and concoon</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/05/15/installing-the-libv8-ruby-gem-on-centos-5-dot-8/">Installing the libv8 Ruby gem on Centos 5.8</a>
       </li>
     
@@ -1308,10 +1433,6 @@ cat /opt/tivoli/tsm/client/ba/bin/dsmsched.log
     
       <li class="post">
         <a href="/blog/2013/02/05/server-issues-fixing/">server issues fixing</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/01/19/ruby-1-dot-9-3-env/">ruby 1.9.3 env</a>
       </li>
     
   </ul>
